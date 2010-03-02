@@ -52,6 +52,7 @@ public class StorageAdapter {
     public StorageAdapter open() throws SQLException {
         mDbHelper = new DatabaseHelper(mCtx);
         mDb = mDbHelper.getWritableDatabase();
+        mDb.setLockingEnabled(false);
         return this;
     }
 
