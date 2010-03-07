@@ -84,6 +84,8 @@ public final class ReminderEntries extends StorageAdapter {
                                                 time);
         entry.setLastCheck(lastCheck);
 
+        cursor.close();
+
         return entry;
     }
 

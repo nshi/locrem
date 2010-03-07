@@ -66,6 +66,8 @@ public final class ReminderCaches extends StorageAdapter {
             end = addressList.indexOf(';', start);
         }
 
+        cursor.close();
+
         return addresses;
     }
 
