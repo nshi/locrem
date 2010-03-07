@@ -9,9 +9,10 @@ import android.text.format.Time;
 
 public final class ReminderEntry implements Parcelable {
     private long mId;
+    private String mLocation;
+    private String mContent;
     private Time mTime;
     private Time mLastCheck;
-    private String mLocation;
     private List<Address> mAddresses;
 
     private ReminderEntry(Parcel in) {
@@ -29,22 +30,24 @@ public final class ReminderEntry implements Parcelable {
             mLastCheck.set(time);
         }
         mLocation = in.readString();
+        mContent = in.readString();
         in.readTypedList(mAddresses, null);
     }
 
-    public ReminderEntry(String location) {
-        this(-1, null, location);
+    public ReminderEntry(String location, String content) {
+        this(-1, location, content, null);
     }
 
-    public ReminderEntry(Time time, String location) {
-        this(-1, time, location);
+    public ReminderEntry(String location, String content, Time time) {
+        this(-1, location, content, time);
     }
 
-    private ReminderEntry(long id, Time time, String location) {
+    private ReminderEntry(long id, String location, String content, Time time) {
         mId = id;
         mTime = time;
         mLastCheck = null;
         mLocation = location;
+        mContent = content;
         mAddresses = null;
     }
 
@@ -80,6 +83,14 @@ public final class ReminderEntry implements Parcelable {
         mLocation = location;
     }
 
+    public String getContent() {
+        return mContent;
+    }
+
+    public void setContent(String content) {
+        mContent = content;
+    }
+
     public List<Address> getAddresses() {
         return mAddresses;
     }
@@ -106,17 +117,18 @@ public final class ReminderEntry implements Parcelable {
     }
 
     @Override
-    public void writeToParcel(Parcel dest, int flags) {
-        dest.writeLong(mId);
+    public void writeToParcel(Parcel out, int flags) {
+        out.writeLong(mId);
         if (mTime != null)
-            dest.writeLong(mTime.toMillis(false));
+            out.writeLong(mTime.toMillis(false));
         else
-            dest.writeLong(0);
+            out.writeLong(0);
         if (mLastCheck != null)
-            dest.writeLong(mLastCheck.toMillis(false));
+            out.writeLong(mLastCheck.toMillis(false));
         else
-            dest.writeLong(0);
-        dest.writeString(mLocation);
-        dest.writeTypedList(mAddresses);
+            out.writeLong(0);
+        out.writeString(mLocation);
+        out.writeString(mContent);
+        out.writeTypedList(mAddresses);
     }
 }

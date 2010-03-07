@@ -8,6 +8,7 @@ import android.text.format.Time;
 
 public final class ReminderEntries extends StorageAdapter {
     public static final String KEY_LOCATION = "loc";
+    public static final String KEY_CONTENT = "content";
     public static final String KEY_LASTCHECK = "last";
     public static final String KEY_TIME = "time";
     public static final String KEY_ID = "_id";
@@ -17,7 +18,8 @@ public final class ReminderEntries extends StorageAdapter {
     private static final String DATABASE_CREATE = "CREATE TABLE " + DATABASE_TABLE
                                                   + " (_id INTEGER PRIMARY KEY,"
                                                   + " time INTEGER, last INTEGER,"
-                                                  + " loc text NOT NULL);";
+                                                  + " loc text NOT NULL,"
+                                                  + " content text NOT NULL);";
 
     public ReminderEntries(Context context) {
         super(context);
@@ -30,6 +32,7 @@ public final class ReminderEntries extends StorageAdapter {
     public long createEntry(ReminderEntry entry) {
         ContentValues initialValues = new ContentValues();
         initialValues.put(KEY_LOCATION, entry.getLocation());
+        initialValues.put(KEY_CONTENT, entry.getContent());
         if (entry.getTime() != null)
             initialValues.put(KEY_TIME, entry.getTime().toMillis(false));
         if (entry.getLastCheck() != null)
@@ -44,14 +47,21 @@ public final class ReminderEntries extends StorageAdapter {
 
     public Cursor getAllEntries() {
         return mDb.query(DATABASE_TABLE,
-                         new String[] { KEY_ID, KEY_LOCATION, KEY_TIME, KEY_LASTCHECK },
+                         new String[] { KEY_ID,
+                                       KEY_LOCATION,
+                                       KEY_CONTENT,
+                                       KEY_TIME,
+                                       KEY_LASTCHECK },
                          null, null, null, null, null);
     }
 
     public ReminderEntry getEntry(long id) throws SQLException {
         Cursor cursor = mDb.query(true,
                                   DATABASE_TABLE,
-                                  new String[] { KEY_LOCATION, KEY_TIME, KEY_LASTCHECK },
+                                  new String[] { KEY_LOCATION,
+                                                KEY_CONTENT,
+                                                KEY_TIME,
+                                                KEY_LASTCHECK },
                                   KEY_ID + "=" + id,
                                   null, null, null, null, null);
         if (cursor == null)
@@ -60,16 +70,18 @@ public final class ReminderEntries extends StorageAdapter {
         cursor.moveToFirst();
 
         Time time = null;
-        if (!cursor.isNull(1)) {
+        if (!cursor.isNull(2)) {
             time = new Time();
-            time.set(cursor.getLong(1));
+            time.set(cursor.getLong(2));
         }
         Time lastCheck = null;
-        if (!cursor.isNull(2)) {
+        if (!cursor.isNull(3)) {
             lastCheck = new Time();
-            lastCheck.set(cursor.getLong(2));
+            lastCheck.set(cursor.getLong(3));
         }
-        ReminderEntry entry = new ReminderEntry(time, cursor.getString(0));
+        ReminderEntry entry = new ReminderEntry(cursor.getString(0),
+                                                cursor.getString(1),
+                                                time);
         entry.setLastCheck(lastCheck);
 
         return entry;
@@ -78,6 +90,7 @@ public final class ReminderEntries extends StorageAdapter {
     public boolean updateEntry(ReminderEntry entry) {
         ContentValues args = new ContentValues();
         args.put(KEY_LOCATION, entry.getLocation());
+        args.put(KEY_CONTENT, entry.getContent());
         if (entry.getTime() != null)
             args.put(KEY_TIME, entry.getTime().toMillis(false));
         if (entry.getLastCheck() != null)
