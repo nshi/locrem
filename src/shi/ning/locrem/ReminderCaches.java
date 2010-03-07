@@ -10,7 +10,7 @@ import android.database.Cursor;
 import android.database.SQLException;
 import android.location.Address;
 
-public class ReminderCaches extends StorageAdapter {
+public final class ReminderCaches extends StorageAdapter {
     public static final String KEY_ADDRESSES = "addrs";
     public static final String KEY_ID = "_id";
 
