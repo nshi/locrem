@@ -8,6 +8,8 @@ import android.os.Parcelable;
 import android.text.format.Time;
 
 public final class ReminderEntry implements Parcelable {
+    public static final String KEY_ENTRY = "entry";
+
     private long mId;
     private String mLocation;
     private String mContent;
@@ -129,6 +131,7 @@ public final class ReminderEntry implements Parcelable {
             out.writeLong(0);
         out.writeString(mLocation);
         out.writeString(mContent);
+        // XXX not sure if this is gonna work.
         out.writeTypedList(mAddresses);
     }
 }

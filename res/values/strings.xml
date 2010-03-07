@@ -3,4 +3,8 @@
     <string name="app_name">Locrem</string>
     <string name="menu_add">Add</string>
     <string name="menu_delete">Delete</string>
+    <string name="location">Location</string>
+    <string name="content">Content</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
 </resources>

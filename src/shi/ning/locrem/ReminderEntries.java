@@ -91,6 +91,8 @@ public final class ReminderEntries extends StorageAdapter {
         ContentValues args = new ContentValues();
         args.put(KEY_LOCATION, entry.getLocation());
         args.put(KEY_CONTENT, entry.getContent());
+        // XXX not sure if this is gonna work if I don't have all columns
+        // present in the args
         if (entry.getTime() != null)
             args.put(KEY_TIME, entry.getTime().toMillis(false));
         if (entry.getLastCheck() != null)
