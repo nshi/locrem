@@ -1,6 +1,7 @@
 package shi.ning.locrem;
 
 import android.app.ListActivity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.ContextMenu;
 import android.view.Menu;
@@ -10,9 +11,14 @@ import android.view.ContextMenu.ContextMenuInfo;
 import android.widget.ListView;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 
-public class ReminderList extends ListActivity {
+public final class ReminderList extends ListActivity {
+    private static final int ACTIVITY_CREATE = 0;
+
     private static final int ADD_ID = Menu.FIRST;
     private static final int DELETE_ID = Menu.FIRST + 1;
+
+    private ReminderEntries mEntries;
+    private ReminderCaches mCaches;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -20,6 +26,11 @@ public class ReminderList extends ListActivity {
 
         registerForContextMenu(getListView());
         setContentView(R.layout.main);
+
+        mEntries = new ReminderEntries(this);
+        mEntries.open();
+        mCaches = new ReminderCaches(this);
+        mCaches.open();
     }
 
     @Override
@@ -33,6 +44,8 @@ public class ReminderList extends ListActivity {
         switch (item.getItemId()) {
         case DELETE_ID:
             AdapterContextMenuInfo info = (AdapterContextMenuInfo) item.getMenuInfo();
+            // XXX this is not gonna work, I don't need the rowId, I need the id
+            // I set.
             deleteEntry(info.id);
             return true;
         }
@@ -83,6 +96,26 @@ public class ReminderList extends ListActivity {
     }
 
     @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        // TODO Auto-generated method stub
+        super.onActivityResult(requestCode, resultCode, data);
+
+        switch (requestCode) {
+        case ACTIVITY_CREATE:
+            ReminderEntry entry = null;
+            if (resultCode == RESULT_OK && data != null) {
+                long id = data.getLongExtra(ReminderEntries.KEY_ID, -1);
+                if (id >= 0)
+                    entry = mEntries.getEntry(id);
+                if (entry != null) {
+                    // TODO display it in the correct order
+                }
+            }
+            break;
+        }
+    }
+
+    @Override
     protected void onPause() {
         // TODO Auto-generated method stub
         super.onPause();
@@ -107,10 +140,13 @@ public class ReminderList extends ListActivity {
     }
 
     private void createEntry() {
-        // TODO
+        Intent intent = new Intent(this, ReminderEdit.class);
+        startActivityForResult(intent, ACTIVITY_CREATE);
     }
 
-    private void deleteEntry(long rowId) {
-        // TODO
+    private void deleteEntry(long id) {
+        if (mEntries.deleteEntry(id) != 1) {
+            // TODO display a toast warning.
+        }
     }
 }

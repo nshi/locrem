@@ -1,13 +1,15 @@
 package shi.ning.locrem;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 
-public class ReminderEdit extends Activity {
-    private ReminderEntry mEntry;
+public final class ReminderEdit extends Activity {
+    private ReminderEntries mEntries;
+    private long mId;
 
     private EditText mLocation;
     private EditText mContent;
@@ -23,18 +25,21 @@ public class ReminderEdit extends Activity {
         Button save = (Button) findViewById(R.id.save);
         Button cancel = (Button) findViewById(R.id.cancel);
 
+        mEntries = new ReminderEntries(this);
+        mEntries.open();
+        mId = -1;
         if (savedInstanceState != null)
-            mEntry = savedInstanceState.getParcelable(ReminderEntry.KEY_ENTRY);
+            mId = savedInstanceState.getLong(ReminderEntries.KEY_ID);
         else
-            mEntry = getIntent().getParcelableExtra(ReminderEntry.KEY_ENTRY);
-
-        populateFields();
+            mId = getIntent().getLongExtra(ReminderEntries.KEY_ID, -1);
 
         save.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // TODO I'm not sure what I want to put here now.
-                setResult(RESULT_OK);
+                Intent intent = new Intent();
+                intent.putExtra(ReminderEntries.KEY_ID, mId);
+                saveEntry();
+                setResult(RESULT_OK, intent);
                 finish();
             }
         });
@@ -42,7 +47,6 @@ public class ReminderEdit extends Activity {
         cancel.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // TODO I'm not sure what I want to put here now.
                 setResult(RESULT_CANCELED);
                 finish();
             }
@@ -51,23 +55,52 @@ public class ReminderEdit extends Activity {
 
     @Override
     protected void onResume() {
-        // TODO Auto-generated method stub
         super.onResume();
+
+        populateFields();
     }
 
     private void populateFields() {
-        // TODO should fill in all the stuff.
+        // TODO Check if there is any unsaved data, if so, load it from the
+        // temporary table, otherwise wipe the slate clean.
+        ReminderEntry entry = null;
+        if (mId >= 0)
+            entry = mEntries.getEntry(mId);
+
+        if (entry != null) {
+            mLocation.setText(entry.getLocation());
+            mContent.setText(entry.getContent());
+        }
     }
 
     @Override
     protected void onPause() {
-        // TODO Auto-generated method stub
+        // TODO Dump unsaved data to a temporary table
         super.onPause();
     }
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
-        // TODO Auto-generated method stub
         super.onSaveInstanceState(outState);
+        outState.putLong(ReminderEntries.KEY_ID, mId);
+        mEntries.close();
+    }
+
+    private void saveEntry() {
+        ReminderEntry entry = null;
+        String location = mLocation.getText().toString();
+        String content = mContent.getText().toString();
+        if (mId >= 0) {
+            entry = mEntries.getEntry(mId);
+
+            if (entry != null) {
+                entry.setLocation(location);
+                entry.setContent(content);
+                mEntries.updateEntry(entry);
+            }
+        } else {
+            entry = new ReminderEntry(location, content);
+            mEntries.createEntry(entry);
+        }
     }
 }
