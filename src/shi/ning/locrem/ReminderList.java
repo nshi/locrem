@@ -2,6 +2,7 @@ package shi.ning.locrem;
 
 import android.app.ListActivity;
 import android.content.Intent;
+import android.database.Cursor;
 import android.os.Bundle;
 import android.view.ContextMenu;
 import android.view.Menu;
@@ -9,6 +10,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.widget.ListView;
+import android.widget.SimpleCursorAdapter;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 
 public final class ReminderList extends ListActivity {
@@ -24,8 +26,8 @@ public final class ReminderList extends ListActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        registerForContextMenu(getListView());
         setContentView(R.layout.main);
+        registerForContextMenu(getListView());
 
         mEntries = new ReminderEntries(this);
         mEntries.open();
@@ -47,6 +49,9 @@ public final class ReminderList extends ListActivity {
             // XXX this is not gonna work, I don't need the rowId, I need the id
             // I set.
             deleteEntry(info.id);
+            // TODO should really just remove the one deleted without refreshing
+            // the whole list.
+            fillData();
             return true;
         }
 
@@ -85,8 +90,9 @@ public final class ReminderList extends ListActivity {
 
     @Override
     protected void onResume() {
-        // TODO Auto-generated method stub
         super.onResume();
+
+        fillData();
     }
 
     @Override
@@ -113,6 +119,8 @@ public final class ReminderList extends ListActivity {
             }
             break;
         }
+
+        fillData();
     }
 
     @Override
@@ -137,6 +145,22 @@ public final class ReminderList extends ListActivity {
     protected void onDestroy() {
         // TODO Auto-generated method stub
         super.onDestroy();
+    }
+
+    private void fillData() {
+        Cursor c = mEntries.getAllEntries();
+        startManagingCursor(c);
+
+        String[] from = new String[] { ReminderEntries.KEY_LOCATION,
+                                      ReminderEntries.KEY_CONTENT };
+        int[] to = new int[] { R.id.list_location, R.id.list_content };
+
+        SimpleCursorAdapter notes = new SimpleCursorAdapter(this,
+                                                            R.layout.row,
+                                                            c,
+                                                            from,
+                                                            to);
+        setListAdapter(notes);
     }
 
     private void createEntry() {

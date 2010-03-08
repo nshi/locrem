@@ -7,4 +7,6 @@
     <string name="content">Content</string>
     <string name="save">Save</string>
     <string name="cancel">Cancel</string>
+    <string name="toggle_on">On</string>
+    <string name="toggle_off">Off</string>
 </resources>
