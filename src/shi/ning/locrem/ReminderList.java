@@ -15,6 +15,7 @@ import android.widget.AdapterView.AdapterContextMenuInfo;
 
 public final class ReminderList extends ListActivity {
     private static final int ACTIVITY_CREATE = 0;
+    private static final int ACTIVITY_EDIT = 1;
 
     private static final int ADD_ID = Menu.FIRST;
     private static final int DELETE_ID = Menu.FIRST + 1;
@@ -97,8 +98,8 @@ public final class ReminderList extends ListActivity {
 
     @Override
     protected void onListItemClick(ListView l, View v, int position, long id) {
-        // TODO Auto-generated method stub
         super.onListItemClick(l, v, position, id);
+        editEntry(id);
     }
 
     @Override
@@ -108,15 +109,7 @@ public final class ReminderList extends ListActivity {
 
         switch (requestCode) {
         case ACTIVITY_CREATE:
-            ReminderEntry entry = null;
-            if (resultCode == RESULT_OK && data != null) {
-                long id = data.getLongExtra(ReminderEntries.KEY_ID, -1);
-                if (id >= 0)
-                    entry = mEntries.getEntry(id);
-                if (entry != null) {
-                    // TODO display it in the correct order
-                }
-            }
+        case ACTIVITY_EDIT:
             break;
         }
 
@@ -166,6 +159,12 @@ public final class ReminderList extends ListActivity {
     private void createEntry() {
         Intent intent = new Intent(this, ReminderEdit.class);
         startActivityForResult(intent, ACTIVITY_CREATE);
+    }
+
+    private void editEntry(long id) {
+        Intent intent = new Intent(this, ReminderEdit.class);
+        intent.putExtra(ReminderEntries.KEY_ID, id);
+        startActivityForResult(intent, ACTIVITY_EDIT);
     }
 
     private void deleteEntry(long id) {
