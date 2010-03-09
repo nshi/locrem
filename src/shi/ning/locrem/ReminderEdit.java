@@ -77,13 +77,14 @@ public final class ReminderEdit extends Activity {
     protected void onPause() {
         // TODO Dump unsaved data to a temporary table
         super.onPause();
+
+        mEntries.close();
     }
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putLong(ReminderEntries.KEY_ID, mId);
-        mEntries.close();
     }
 
     private void saveEntry() {
