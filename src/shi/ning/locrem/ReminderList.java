@@ -1,6 +1,7 @@
 package shi.ning.locrem;
 
 import android.app.ListActivity;
+import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.os.Bundle;
@@ -11,6 +12,7 @@ import android.view.View;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
+import android.widget.Toast;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 
 public final class ReminderList extends ListActivity {
@@ -170,8 +172,12 @@ public final class ReminderList extends ListActivity {
     }
 
     private void deleteEntry(long id) {
-        if (mEntries.deleteEntry(id) != 1) {
-            // TODO display a toast warning.
-        }
+        if (mEntries.deleteEntry(id) != 1)
+            notify("Failed to delete entry: " + id, Toast.LENGTH_SHORT);
+    }
+
+    private void notify(String message, int duration) {
+        Context context = getApplicationContext();
+        Toast.makeText(context, message, duration).show();
     }
 }
