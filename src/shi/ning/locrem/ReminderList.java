@@ -47,8 +47,8 @@ public final class ReminderList extends ListActivity {
             final ReminderEntry entry = new ReminderEntry(cursor);
 
             final ImageView indicator = (ImageView) view.findViewById(R.id.toggle);
-            indicator.setImageResource(entry.isEnabled() ? android.R.drawable.button_onoff_indicator_on
-                                                        : android.R.drawable.button_onoff_indicator_off);
+            indicator.setImageResource(entry.enabled ? android.R.drawable.button_onoff_indicator_on
+                                                     : android.R.drawable.button_onoff_indicator_off);
 
             indicator.setOnClickListener(new OnClickListener() {
                 @Override
@@ -58,18 +58,18 @@ public final class ReminderList extends ListActivity {
             });
 
             TextView location = (TextView) view.findViewById(R.id.list_location);
-            location.setText(entry.getLocation());
+            location.setText(entry.location);
 
             TextView content = (TextView) view.findViewById(R.id.list_content);
-            content.setText(entry.getContent());
+            content.setText(entry.content);
         }
     }
 
     private void toggleIndicator(ImageView indicator, ReminderEntry entry) {
-        final boolean enabled = entry.isEnabled();
+        final boolean enabled = entry.enabled;
         indicator.setImageResource(enabled ? android.R.drawable.button_onoff_indicator_off
                                           : android.R.drawable.button_onoff_indicator_on);
-        entry.enabled(!enabled);
+        entry.enabled = !enabled;
         mEntries.updateEntry(entry);
     }
 

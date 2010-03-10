@@ -68,8 +68,8 @@ public final class ReminderEdit extends Activity {
             entry = mEntries.getEntry(mId);
 
         if (entry != null) {
-            mLocation.setText(entry.getLocation());
-            mContent.setText(entry.getContent());
+            mLocation.setText(entry.location);
+            mContent.setText(entry.content);
         }
     }
 
@@ -95,8 +95,8 @@ public final class ReminderEdit extends Activity {
             entry = mEntries.getEntry(mId);
 
             if (entry != null) {
-                entry.setLocation(location);
-                entry.setContent(content);
+                entry.location = location;
+                entry.content = content;
                 mEntries.updateEntry(entry);
             }
         } else {

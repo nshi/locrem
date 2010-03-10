@@ -12,13 +12,13 @@ import android.text.format.Time;
 public final class ReminderEntry implements Parcelable {
     public static final String KEY_ENTRY = "entry";
 
-    private long mId;
-    private String mLocation;
-    private String mContent;
-    private Time mTime;
-    private Time mLastCheck;
-    private List<Address> mAddresses;
-    private boolean mEnabled;
+    public long id;
+    public String location;
+    public String content;
+    public Time time;
+    public Time lastCheck;
+    public List<Address> addresses;
+    public boolean enabled;
 
     public static class Columns implements BaseColumns {
         public static final String LOCATION = "loc";
@@ -44,43 +44,43 @@ public final class ReminderEntry implements Parcelable {
     }
 
     private ReminderEntry(Parcel in) {
-        mId = in.readLong();
+        this.id = in.readLong();
         long time = in.readLong();
-        mTime = null;
+        this.time = null;
         if (time > 0) {
-            mTime = new Time();
-            mTime.set(time);
+            this.time = new Time();
+            this.time.set(time);
         }
         time = in.readLong();
-        mLastCheck = null;
+        this.lastCheck = null;
         if (time > 0) {
-            mLastCheck = new Time();
-            mLastCheck.set(time);
+            this.lastCheck = new Time();
+            this.lastCheck.set(time);
         }
-        mEnabled = in.readByte() == 1;
-        mLocation = in.readString();
-        mContent = in.readString();
-        in.readTypedList(mAddresses, null);
+        this.enabled = in.readByte() == 1;
+        this.location = in.readString();
+        this.content = in.readString();
+        in.readTypedList(this.addresses, null);
     }
 
     public ReminderEntry(Cursor in) {
-        mId = in.getLong(Columns.ID_INDEX);
+        this.id = in.getLong(Columns.ID_INDEX);
         long time = in.getLong(Columns.TIME_INDEX);
-        mTime = null;
+        this.time = null;
         if (time > 0) {
-            mTime = new Time();
-            mTime.set(time);
+            this.time = new Time();
+            this.time.set(time);
         }
         time = in.getLong(Columns.LASTCHECK_INDEX);
-        mLastCheck = null;
+        this.lastCheck = null;
         if (time > 0) {
-            mLastCheck = new Time();
-            mLastCheck.set(time);
+            this.lastCheck = new Time();
+            this.lastCheck.set(time);
         }
-        mEnabled = in.getInt(Columns.ENABLED_INDEX) == 1;
-        mLocation = in.getString(Columns.LOCATION_INDEX);
-        mContent = in.getString(Columns.CONTENT_INDEX);
-        mAddresses = null;
+        this.enabled = in.getInt(Columns.ENABLED_INDEX) == 1;
+        this.location = in.getString(Columns.LOCATION_INDEX);
+        this.content = in.getString(Columns.CONTENT_INDEX);
+        this.addresses = null;
     }
 
     public ReminderEntry(String location, String content) {
@@ -92,69 +92,13 @@ public final class ReminderEntry implements Parcelable {
     }
 
     private ReminderEntry(long id, String location, String content, Time time) {
-        mId = id;
-        mTime = time;
-        mLastCheck = null;
-        mLocation = location;
-        mContent = content;
-        mAddresses = null;
-        mEnabled = true;
-    }
-
-    public long getId() {
-        return mId;
-    }
-
-    public void setId(long id) {
-        mId = id;
-    }
-
-    public Time getTime() {
-        return mTime;
-    }
-
-    public void setTime(Time time) {
-        mTime = time;
-    }
-
-    public Time getLastCheck() {
-        return mLastCheck;
-    }
-
-    public void setLastCheck(Time lastCheck) {
-        mLastCheck = lastCheck;
-    }
-
-    public String getLocation() {
-        return mLocation;
-    }
-
-    public void setLocation(String location) {
-        mLocation = location;
-    }
-
-    public String getContent() {
-        return mContent;
-    }
-
-    public void setContent(String content) {
-        mContent = content;
-    }
-
-    public List<Address> getAddresses() {
-        return mAddresses;
-    }
-
-    public void setAddresses(List<Address> addresses) {
-        mAddresses = addresses;
-    }
-
-    public boolean isEnabled() {
-        return mEnabled;
-    }
-
-    public void enabled(boolean enabled) {
-        mEnabled = enabled;
+        this.id = id;
+        this.time = time;
+        this.lastCheck = null;
+        this.location = location;
+        this.content = content;
+        this.addresses = null;
+        this.enabled = true;
     }
 
     public static final Parcelable.Creator<ReminderEntry> CREATE = new Parcelable.Creator<ReminderEntry>() {
@@ -176,19 +120,19 @@ public final class ReminderEntry implements Parcelable {
 
     @Override
     public void writeToParcel(Parcel out, int flags) {
-        out.writeLong(mId);
-        if (mTime != null)
-            out.writeLong(mTime.toMillis(false));
+        out.writeLong(this.id);
+        if (this.time != null)
+            out.writeLong(this.time.toMillis(false));
         else
             out.writeLong(0);
-        if (mLastCheck != null)
-            out.writeLong(mLastCheck.toMillis(false));
+        if (this.lastCheck != null)
+            out.writeLong(this.lastCheck.toMillis(false));
         else
             out.writeLong(0);
-        out.writeByte((byte) (mEnabled ? 1 : 0));
-        out.writeString(mLocation);
-        out.writeString(mContent);
+        out.writeByte((byte) (this.enabled ? 1 : 0));
+        out.writeString(this.location);
+        out.writeString(this.content);
         // XXX not sure if this is gonna work.
-        out.writeTypedList(mAddresses);
+        out.writeTypedList(this.addresses);
     }
 }

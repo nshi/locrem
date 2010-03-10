@@ -27,14 +27,13 @@ public final class ReminderEntries extends StorageAdapter {
 
     public long createEntry(ReminderEntry entry) {
         ContentValues initialValues = new ContentValues();
-        initialValues.put(ReminderEntry.Columns.LOCATION, entry.getLocation());
-        initialValues.put(ReminderEntry.Columns.CONTENT, entry.getContent());
-        initialValues.put(ReminderEntry.Columns.ENABLED, entry.isEnabled() ? 1 : 0);
-        if (entry.getTime() != null)
-            initialValues.put(ReminderEntry.Columns.TIME, entry.getTime().toMillis(false));
-        if (entry.getLastCheck() != null)
-            initialValues.put(ReminderEntry.Columns.LASTCHECK, entry.getLastCheck()
-                                                                    .toMillis(false));
+        initialValues.put(ReminderEntry.Columns.LOCATION, entry.location);
+        initialValues.put(ReminderEntry.Columns.CONTENT, entry.content);
+        initialValues.put(ReminderEntry.Columns.ENABLED, entry.enabled ? 1 : 0);
+        if (entry.time != null)
+            initialValues.put(ReminderEntry.Columns.TIME, entry.time.toMillis(false));
+        if (entry.lastCheck != null)
+            initialValues.put(ReminderEntry.Columns.LASTCHECK, entry.lastCheck.toMillis(false));
 
         return mDb.insert(DATABASE_TABLE, null, initialValues);
     }
@@ -71,7 +70,7 @@ public final class ReminderEntries extends StorageAdapter {
         ReminderEntry entry = new ReminderEntry(cursor.getString(0),
                                                 cursor.getString(1),
                                                 time);
-        entry.setLastCheck(lastCheck);
+        entry.lastCheck = lastCheck;
 
         cursor.close();
 
@@ -80,18 +79,17 @@ public final class ReminderEntries extends StorageAdapter {
 
     public boolean updateEntry(ReminderEntry entry) {
         ContentValues args = new ContentValues();
-        args.put(ReminderEntry.Columns.LOCATION, entry.getLocation());
-        args.put(ReminderEntry.Columns.CONTENT, entry.getContent());
-        args.put(ReminderEntry.Columns.ENABLED, entry.isEnabled() ? 1 : 0);
+        args.put(ReminderEntry.Columns.LOCATION, entry.location);
+        args.put(ReminderEntry.Columns.CONTENT, entry.content);
+        args.put(ReminderEntry.Columns.ENABLED, entry.enabled ? 1 : 0);
         // XXX not sure if this is gonna work if I don't have all columns
         // present in the args
-        if (entry.getTime() != null)
-            args.put(ReminderEntry.Columns.TIME, entry.getTime().toMillis(false));
-        if (entry.getLastCheck() != null)
-            args.put(ReminderEntry.Columns.LASTCHECK, entry.getLastCheck()
-                                                           .toMillis(false));
+        if (entry.time != null)
+            args.put(ReminderEntry.Columns.TIME, entry.time.toMillis(false));
+        if (entry.lastCheck != null)
+            args.put(ReminderEntry.Columns.LASTCHECK, entry.lastCheck.toMillis(false));
 
         return mDb.update(DATABASE_TABLE, args,
-                          ReminderEntry.Columns._ID + "=" + entry.getId(), null) > 0;
+                          ReminderEntry.Columns._ID + "=" + entry.id, null) > 0;
     }
 }
