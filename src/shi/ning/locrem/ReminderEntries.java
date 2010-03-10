@@ -7,13 +7,6 @@ import android.database.SQLException;
 import android.text.format.Time;
 
 public final class ReminderEntries extends StorageAdapter {
-    public static final String KEY_LOCATION = "loc";
-    public static final String KEY_CONTENT = "content";
-    public static final String KEY_LASTCHECK = "last";
-    public static final String KEY_TIME = "time";
-    public static final String KEY_ID = "_id";
-    public static final String KEY_ENABLED = "enabled";
-
     private static final int DATABASE_VERSION = 1;
     private static final String DATABASE_TABLE = "entries";
     private static final String DATABASE_CREATE = "CREATE TABLE " + DATABASE_TABLE
@@ -34,41 +27,31 @@ public final class ReminderEntries extends StorageAdapter {
 
     public long createEntry(ReminderEntry entry) {
         ContentValues initialValues = new ContentValues();
-        initialValues.put(KEY_LOCATION, entry.getLocation());
-        initialValues.put(KEY_CONTENT, entry.getContent());
-        initialValues.put(KEY_ENABLED, entry.isEnabled() ? 1 : 0);
+        initialValues.put(ReminderEntry.Columns.LOCATION, entry.getLocation());
+        initialValues.put(ReminderEntry.Columns.CONTENT, entry.getContent());
+        initialValues.put(ReminderEntry.Columns.ENABLED, entry.isEnabled() ? 1 : 0);
         if (entry.getTime() != null)
-            initialValues.put(KEY_TIME, entry.getTime().toMillis(false));
+            initialValues.put(ReminderEntry.Columns.TIME, entry.getTime().toMillis(false));
         if (entry.getLastCheck() != null)
-            initialValues.put(KEY_LASTCHECK, entry.getLastCheck().toMillis(false));
+            initialValues.put(ReminderEntry.Columns.LASTCHECK, entry.getLastCheck()
+                                                                    .toMillis(false));
 
         return mDb.insert(DATABASE_TABLE, null, initialValues);
     }
 
     public int deleteEntry(long id) {
-        return mDb.delete(DATABASE_TABLE, KEY_ID + "=" + id, null);
+        return mDb.delete(DATABASE_TABLE, ReminderEntry.Columns._ID + "=" + id, null);
     }
 
     public Cursor getAllEntries() {
-        return mDb.query(DATABASE_TABLE,
-                         new String[] { KEY_ID,
-                                       KEY_LOCATION,
-                                       KEY_CONTENT,
-                                       KEY_TIME,
-                                       KEY_LASTCHECK,
-                                       KEY_ENABLED },
+        return mDb.query(DATABASE_TABLE, ReminderEntry.Columns.QUERY_COLUMNS,
                          null, null, null, null, null);
     }
 
     public ReminderEntry getEntry(long id) throws SQLException {
         Cursor cursor = mDb.query(true,
-                                  DATABASE_TABLE,
-                                  new String[] { KEY_LOCATION,
-                                                KEY_CONTENT,
-                                                KEY_TIME,
-                                                KEY_LASTCHECK,
-                                                KEY_ENABLED },
-                                  KEY_ID + "=" + id,
+                                  DATABASE_TABLE, ReminderEntry.Columns.QUERY_COLUMNS,
+                                  ReminderEntry.Columns._ID + "=" + id,
                                   null, null, null, null, null);
         if (cursor == null)
             return null;
@@ -97,16 +80,18 @@ public final class ReminderEntries extends StorageAdapter {
 
     public boolean updateEntry(ReminderEntry entry) {
         ContentValues args = new ContentValues();
-        args.put(KEY_LOCATION, entry.getLocation());
-        args.put(KEY_CONTENT, entry.getContent());
-        args.put(KEY_ENABLED, entry.isEnabled() ? 1 : 0);
+        args.put(ReminderEntry.Columns.LOCATION, entry.getLocation());
+        args.put(ReminderEntry.Columns.CONTENT, entry.getContent());
+        args.put(ReminderEntry.Columns.ENABLED, entry.isEnabled() ? 1 : 0);
         // XXX not sure if this is gonna work if I don't have all columns
         // present in the args
         if (entry.getTime() != null)
-            args.put(KEY_TIME, entry.getTime().toMillis(false));
+            args.put(ReminderEntry.Columns.TIME, entry.getTime().toMillis(false));
         if (entry.getLastCheck() != null)
-            args.put(KEY_LASTCHECK, entry.getLastCheck().toMillis(false));
+            args.put(ReminderEntry.Columns.LASTCHECK, entry.getLastCheck()
+                                                           .toMillis(false));
 
-        return mDb.update(DATABASE_TABLE, args, KEY_ID + "=" + entry.getId(), null) > 0;
+        return mDb.update(DATABASE_TABLE, args,
+                          ReminderEntry.Columns._ID + "=" + entry.getId(), null) > 0;
     }
 }

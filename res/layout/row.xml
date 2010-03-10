@@ -4,11 +4,10 @@
               android:layout_height="wrap_content"
               android:orientation="horizontal">
     <ImageView android:id="@+id/toggle"
-               android:src="@android:drawable/button_onoff_indicator_on"
+               android:src="@android:drawable/button_onoff_indicator_off"
                android:layout_width="40dip"
-               android:layout_height="wrap_content"
+               android:layout_height="fill_parent"
                android:layout_gravity="center"
-               android:scaleType="fitXY"
                android:layout_marginLeft="7dip"
                android:layout_marginRight="7dip"
                android:background="@android:drawable/list_selector_background" />

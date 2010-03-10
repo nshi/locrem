@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
-    android:layout_width="fill_parent"
-    android:layout_height="fill_parent">
+              android:orientation="vertical"
+              android:layout_width="fill_parent"
+              android:layout_height="fill_parent">
     <LinearLayout android:id="@+id/add_alarm"
                   android:clickable="true"
                   android:focusable="true"
@@ -34,5 +34,6 @@
 
     <ListView android:layout_width="fill_parent"
               android:layout_height="wrap_content"
+              android:layout_weight="1"
               android:id="@android:id/list" />
 </LinearLayout>

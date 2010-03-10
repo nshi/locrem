@@ -2,9 +2,11 @@ package shi.ning.locrem;
 
 import java.util.List;
 
+import android.database.Cursor;
 import android.location.Address;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.provider.BaseColumns;
 import android.text.format.Time;
 
 public final class ReminderEntry implements Parcelable {
@@ -17,6 +19,29 @@ public final class ReminderEntry implements Parcelable {
     private Time mLastCheck;
     private List<Address> mAddresses;
     private boolean mEnabled;
+
+    public static class Columns implements BaseColumns {
+        public static final String LOCATION = "loc";
+        public static final String CONTENT = "content";
+        public static final String LASTCHECK = "last";
+        public static final String TIME = "time";
+        public static final String ENABLED = "enabled";
+
+        public static final String[] QUERY_COLUMNS = { _ID,
+                                                      LOCATION,
+                                                      CONTENT,
+                                                      LASTCHECK,
+                                                      TIME,
+                                                      ENABLED };
+
+        // Have to be in sync with QUERY_COLUMNS
+        public static final int ID_INDEX = 0;
+        public static final int LOCATION_INDEX = 1;
+        public static final int CONTENT_INDEX = 2;
+        public static final int LASTCHECK_INDEX = 3;
+        public static final int TIME_INDEX = 4;
+        public static final int ENABLED_INDEX = 5;
+    }
 
     private ReminderEntry(Parcel in) {
         mId = in.readLong();
@@ -32,10 +57,30 @@ public final class ReminderEntry implements Parcelable {
             mLastCheck = new Time();
             mLastCheck.set(time);
         }
-        mEnabled = in.readByte() == 1 ? true : false;
+        mEnabled = in.readByte() == 1;
         mLocation = in.readString();
         mContent = in.readString();
         in.readTypedList(mAddresses, null);
+    }
+
+    public ReminderEntry(Cursor in) {
+        mId = in.getLong(Columns.ID_INDEX);
+        long time = in.getLong(Columns.TIME_INDEX);
+        mTime = null;
+        if (time > 0) {
+            mTime = new Time();
+            mTime.set(time);
+        }
+        time = in.getLong(Columns.LASTCHECK_INDEX);
+        mLastCheck = null;
+        if (time > 0) {
+            mLastCheck = new Time();
+            mLastCheck.set(time);
+        }
+        mEnabled = in.getInt(Columns.ENABLED_INDEX) == 1;
+        mLocation = in.getString(Columns.LOCATION_INDEX);
+        mContent = in.getString(Columns.CONTENT_INDEX);
+        mAddresses = null;
     }
 
     public ReminderEntry(String location, String content) {

@@ -29,15 +29,15 @@ public final class ReminderEdit extends Activity {
         mEntries.open();
         mId = -1;
         if (savedInstanceState != null)
-            mId = savedInstanceState.getLong(ReminderEntries.KEY_ID);
+            mId = savedInstanceState.getLong(ReminderEntry.Columns._ID);
         else
-            mId = getIntent().getLongExtra(ReminderEntries.KEY_ID, -1);
+            mId = getIntent().getLongExtra(ReminderEntry.Columns._ID, -1);
 
         save.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent();
-                intent.putExtra(ReminderEntries.KEY_ID, mId);
+                intent.putExtra(ReminderEntry.Columns._ID, mId);
                 saveEntry();
                 setResult(RESULT_OK, intent);
                 finish();
@@ -84,7 +84,7 @@ public final class ReminderEdit extends Activity {
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        outState.putLong(ReminderEntries.KEY_ID, mId);
+        outState.putLong(ReminderEntry.Columns._ID, mId);
     }
 
     private void saveEntry() {
