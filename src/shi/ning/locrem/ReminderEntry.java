@@ -16,6 +16,7 @@ public final class ReminderEntry implements Parcelable {
     private Time mTime;
     private Time mLastCheck;
     private List<Address> mAddresses;
+    private boolean mEnabled;
 
     private ReminderEntry(Parcel in) {
         mId = in.readLong();
@@ -31,6 +32,7 @@ public final class ReminderEntry implements Parcelable {
             mLastCheck = new Time();
             mLastCheck.set(time);
         }
+        mEnabled = in.readByte() == 1 ? true : false;
         mLocation = in.readString();
         mContent = in.readString();
         in.readTypedList(mAddresses, null);
@@ -51,6 +53,7 @@ public final class ReminderEntry implements Parcelable {
         mLocation = location;
         mContent = content;
         mAddresses = null;
+        mEnabled = true;
     }
 
     public long getId() {
@@ -101,6 +104,14 @@ public final class ReminderEntry implements Parcelable {
         mAddresses = addresses;
     }
 
+    public boolean isEnabled() {
+        return mEnabled;
+    }
+
+    public void enabled(boolean enabled) {
+        mEnabled = enabled;
+    }
+
     public static final Parcelable.Creator<ReminderEntry> CREATE = new Parcelable.Creator<ReminderEntry>() {
         @Override
         public ReminderEntry createFromParcel(Parcel source) {
@@ -129,6 +140,7 @@ public final class ReminderEntry implements Parcelable {
             out.writeLong(mLastCheck.toMillis(false));
         else
             out.writeLong(0);
+        out.writeByte((byte) (mEnabled ? 1 : 0));
         out.writeString(mLocation);
         out.writeString(mContent);
         // XXX not sure if this is gonna work.

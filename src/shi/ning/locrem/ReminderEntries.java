@@ -12,12 +12,15 @@ public final class ReminderEntries extends StorageAdapter {
     public static final String KEY_LASTCHECK = "last";
     public static final String KEY_TIME = "time";
     public static final String KEY_ID = "_id";
+    public static final String KEY_ENABLED = "enabled";
 
     private static final int DATABASE_VERSION = 1;
     private static final String DATABASE_TABLE = "entries";
     private static final String DATABASE_CREATE = "CREATE TABLE " + DATABASE_TABLE
                                                   + " (_id INTEGER PRIMARY KEY,"
-                                                  + " time INTEGER, last INTEGER,"
+                                                  + " time INTEGER,"
+                                                  + " last INTEGER,"
+                                                  + " enabled TINYINT,"
                                                   + " loc text NOT NULL,"
                                                   + " content text NOT NULL);";
 
@@ -33,6 +36,7 @@ public final class ReminderEntries extends StorageAdapter {
         ContentValues initialValues = new ContentValues();
         initialValues.put(KEY_LOCATION, entry.getLocation());
         initialValues.put(KEY_CONTENT, entry.getContent());
+        initialValues.put(KEY_ENABLED, entry.isEnabled() ? 1 : 0);
         if (entry.getTime() != null)
             initialValues.put(KEY_TIME, entry.getTime().toMillis(false));
         if (entry.getLastCheck() != null)
@@ -51,7 +55,8 @@ public final class ReminderEntries extends StorageAdapter {
                                        KEY_LOCATION,
                                        KEY_CONTENT,
                                        KEY_TIME,
-                                       KEY_LASTCHECK },
+                                       KEY_LASTCHECK,
+                                       KEY_ENABLED },
                          null, null, null, null, null);
     }
 
@@ -61,7 +66,8 @@ public final class ReminderEntries extends StorageAdapter {
                                   new String[] { KEY_LOCATION,
                                                 KEY_CONTENT,
                                                 KEY_TIME,
-                                                KEY_LASTCHECK },
+                                                KEY_LASTCHECK,
+                                                KEY_ENABLED },
                                   KEY_ID + "=" + id,
                                   null, null, null, null, null);
         if (cursor == null)
@@ -93,6 +99,7 @@ public final class ReminderEntries extends StorageAdapter {
         ContentValues args = new ContentValues();
         args.put(KEY_LOCATION, entry.getLocation());
         args.put(KEY_CONTENT, entry.getContent());
+        args.put(KEY_ENABLED, entry.isEnabled() ? 1 : 0);
         // XXX not sure if this is gonna work if I don't have all columns
         // present in the args
         if (entry.getTime() != null)
