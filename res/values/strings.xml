@@ -4,7 +4,7 @@
     <string name="add_entry">Add Entry</string>
     <string name="menu_delete">Delete</string>
     <string name="location">Location</string>
-    <string name="content">Content</string>
+    <string name="note">Note</string>
     <string name="save">Save</string>
     <string name="cancel">Cancel</string>
 </resources>

@@ -1,9 +1,16 @@
 package shi.ning.locrem;
 
+import java.io.IOException;
+import java.util.List;
+
 import android.app.Activity;
 import android.content.Intent;
+import android.location.Address;
+import android.location.Geocoder;
 import android.os.Bundle;
+import android.view.KeyEvent;
 import android.view.View;
+import android.view.View.OnKeyListener;
 import android.widget.Button;
 import android.widget.EditText;
 
@@ -12,7 +19,7 @@ public final class ReminderEdit extends Activity {
     private long mId;
 
     private EditText mLocation;
-    private EditText mContent;
+    private EditText mNote;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -20,7 +27,27 @@ public final class ReminderEdit extends Activity {
         setContentView(R.layout.edit);
 
         mLocation = (EditText) findViewById(R.id.location);
-        mContent = (EditText) findViewById(R.id.content);
+        mNote = (EditText) findViewById(R.id.note);
+
+        mLocation.setOnKeyListener(new OnKeyListener() {
+            @Override
+            public boolean onKey(View v, int keyCode, KeyEvent event) {
+                if (keyCode != KeyEvent.KEYCODE_ENTER)
+                    return false;
+
+                Geocoder geo = new Geocoder(getApplicationContext());
+                List<Address> addrs = null;
+                try {
+                    addrs = geo.getFromLocationName(((EditText) v).getText().toString(), 1);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                for (Address a : addrs) {
+                    mNote.setText(a.toString() + "\n");
+                }
+                return true;
+            }
+        });
 
         Button save = (Button) findViewById(R.id.save);
         Button cancel = (Button) findViewById(R.id.cancel);
@@ -69,7 +96,7 @@ public final class ReminderEdit extends Activity {
 
         if (entry != null) {
             mLocation.setText(entry.location);
-            mContent.setText(entry.content);
+            mNote.setText(entry.note);
         }
     }
 
@@ -90,17 +117,17 @@ public final class ReminderEdit extends Activity {
     private void saveEntry() {
         ReminderEntry entry = null;
         String location = mLocation.getText().toString();
-        String content = mContent.getText().toString();
+        String note = mNote.getText().toString();
         if (mId >= 0) {
             entry = mEntries.getEntry(mId);
 
             if (entry != null) {
                 entry.location = location;
-                entry.content = content;
+                entry.note = note;
                 mEntries.updateEntry(entry);
             }
         } else {
-            entry = new ReminderEntry(location, content);
+            entry = new ReminderEntry(location, note);
             mEntries.createEntry(entry);
         }
     }

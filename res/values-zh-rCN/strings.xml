@@ -4,7 +4,7 @@
     <string name="add_entry">添加提醒</string>
     <string name="menu_delete">删除提醒</string>
     <string name="location">地点</string>
-    <string name="content">提示内容</string>
+    <string name="note">提示内容</string>
     <string name="save">保存</string>
     <string name="cancel">取消</string>
 </resources>

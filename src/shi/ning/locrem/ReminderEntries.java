@@ -15,7 +15,7 @@ public final class ReminderEntries extends StorageAdapter {
                                                   + " last INTEGER,"
                                                   + " enabled TINYINT,"
                                                   + " loc text NOT NULL,"
-                                                  + " content text NOT NULL);";
+                                                  + " note text NOT NULL);";
 
     public ReminderEntries(Context context) {
         super(context);
@@ -28,7 +28,7 @@ public final class ReminderEntries extends StorageAdapter {
     public long createEntry(ReminderEntry entry) {
         ContentValues initialValues = new ContentValues();
         initialValues.put(ReminderEntry.Columns.LOCATION, entry.location);
-        initialValues.put(ReminderEntry.Columns.CONTENT, entry.content);
+        initialValues.put(ReminderEntry.Columns.NOTE, entry.note);
         initialValues.put(ReminderEntry.Columns.ENABLED, entry.enabled ? 1 : 0);
         if (entry.time != null)
             initialValues.put(ReminderEntry.Columns.TIME, entry.time.toMillis(false));
@@ -69,7 +69,7 @@ public final class ReminderEntries extends StorageAdapter {
             lastCheck.set(cursor.getLong(ReminderEntry.Columns.LASTCHECK_INDEX));
         }
         ReminderEntry entry = new ReminderEntry(cursor.getString(ReminderEntry.Columns.LOCATION_INDEX),
-                                                cursor.getString(ReminderEntry.Columns.CONTENT_INDEX),
+                                                cursor.getString(ReminderEntry.Columns.NOTE_INDEX),
                                                 time);
         entry.lastCheck = lastCheck;
 
@@ -81,7 +81,7 @@ public final class ReminderEntries extends StorageAdapter {
     public boolean updateEntry(ReminderEntry entry) {
         ContentValues args = new ContentValues();
         args.put(ReminderEntry.Columns.LOCATION, entry.location);
-        args.put(ReminderEntry.Columns.CONTENT, entry.content);
+        args.put(ReminderEntry.Columns.NOTE, entry.note);
         args.put(ReminderEntry.Columns.ENABLED, entry.enabled ? 1 : 0);
         // XXX not sure if this is gonna work if I don't have all columns
         // present in the args

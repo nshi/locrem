@@ -48,7 +48,7 @@ public final class ReminderList extends ListActivity {
 
             final ImageView indicator = (ImageView) view.findViewById(R.id.toggle);
             indicator.setImageResource(entry.enabled ? android.R.drawable.button_onoff_indicator_on
-                                                     : android.R.drawable.button_onoff_indicator_off);
+                                                    : android.R.drawable.button_onoff_indicator_off);
 
             indicator.setOnClickListener(new OnClickListener() {
                 @Override
@@ -60,8 +60,8 @@ public final class ReminderList extends ListActivity {
             TextView location = (TextView) view.findViewById(R.id.list_location);
             location.setText(entry.location);
 
-            TextView content = (TextView) view.findViewById(R.id.list_content);
-            content.setText(entry.content);
+            TextView note = (TextView) view.findViewById(R.id.list_note);
+            note.setText(entry.note);
         }
     }
 
@@ -107,8 +107,6 @@ public final class ReminderList extends ListActivity {
         switch (item.getItemId()) {
         case DELETE_ID:
             AdapterContextMenuInfo info = (AdapterContextMenuInfo) item.getMenuInfo();
-            // XXX this is not gonna work, I don't need the rowId, I need the id
-            // I set.
             deleteEntry(info.id);
             // TODO should really just remove the one deleted without refreshing
             // the whole list.

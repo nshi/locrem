@@ -14,22 +14,22 @@ public final class ReminderEntry implements Parcelable {
 
     public long id;
     public String location;
-    public String content;
+    public String note;
     public Time time;
     public Time lastCheck;
     public List<Address> addresses;
     public boolean enabled;
 
-    public static class Columns implements BaseColumns {
+    public static final class Columns implements BaseColumns {
         public static final String LOCATION = "loc";
-        public static final String CONTENT = "content";
+        public static final String NOTE = "note";
         public static final String LASTCHECK = "last";
         public static final String TIME = "time";
         public static final String ENABLED = "enabled";
 
         public static final String[] QUERY_COLUMNS = { _ID,
                                                       LOCATION,
-                                                      CONTENT,
+                                                      NOTE,
                                                       LASTCHECK,
                                                       TIME,
                                                       ENABLED };
@@ -37,7 +37,7 @@ public final class ReminderEntry implements Parcelable {
         // Have to be in sync with QUERY_COLUMNS
         public static final int ID_INDEX = 0;
         public static final int LOCATION_INDEX = 1;
-        public static final int CONTENT_INDEX = 2;
+        public static final int NOTE_INDEX = 2;
         public static final int LASTCHECK_INDEX = 3;
         public static final int TIME_INDEX = 4;
         public static final int ENABLED_INDEX = 5;
@@ -59,7 +59,7 @@ public final class ReminderEntry implements Parcelable {
         }
         this.enabled = in.readByte() == 1;
         this.location = in.readString();
-        this.content = in.readString();
+        this.note = in.readString();
         in.readTypedList(this.addresses, null);
     }
 
@@ -79,24 +79,24 @@ public final class ReminderEntry implements Parcelable {
         }
         this.enabled = in.getInt(Columns.ENABLED_INDEX) == 1;
         this.location = in.getString(Columns.LOCATION_INDEX);
-        this.content = in.getString(Columns.CONTENT_INDEX);
+        this.note = in.getString(Columns.NOTE_INDEX);
         this.addresses = null;
     }
 
-    public ReminderEntry(String location, String content) {
-        this(-1, location, content, null);
+    public ReminderEntry(String location, String note) {
+        this(-1, location, note, null);
     }
 
-    public ReminderEntry(String location, String content, Time time) {
-        this(-1, location, content, time);
+    public ReminderEntry(String location, String note, Time time) {
+        this(-1, location, note, time);
     }
 
-    private ReminderEntry(long id, String location, String content, Time time) {
+    private ReminderEntry(long id, String location, String note, Time time) {
         this.id = id;
         this.time = time;
         this.lastCheck = null;
         this.location = location;
-        this.content = content;
+        this.note = note;
         this.addresses = null;
         this.enabled = true;
     }
@@ -131,7 +131,7 @@ public final class ReminderEntry implements Parcelable {
             out.writeLong(0);
         out.writeByte((byte) (this.enabled ? 1 : 0));
         out.writeString(this.location);
-        out.writeString(this.content);
+        out.writeString(this.note);
         // XXX not sure if this is gonna work.
         out.writeTypedList(this.addresses);
     }
