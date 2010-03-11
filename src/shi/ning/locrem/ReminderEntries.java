@@ -33,7 +33,8 @@ public final class ReminderEntries extends StorageAdapter {
         if (entry.time != null)
             initialValues.put(ReminderEntry.Columns.TIME, entry.time.toMillis(false));
         if (entry.lastCheck != null)
-            initialValues.put(ReminderEntry.Columns.LASTCHECK, entry.lastCheck.toMillis(false));
+            initialValues.put(ReminderEntry.Columns.LASTCHECK,
+                              entry.lastCheck.toMillis(false));
 
         return mDb.insert(DATABASE_TABLE, null, initialValues);
     }
@@ -58,17 +59,17 @@ public final class ReminderEntries extends StorageAdapter {
         cursor.moveToFirst();
 
         Time time = null;
-        if (!cursor.isNull(2)) {
+        if (!cursor.isNull(ReminderEntry.Columns.TIME_INDEX)) {
             time = new Time();
-            time.set(cursor.getLong(2));
+            time.set(cursor.getLong(ReminderEntry.Columns.TIME_INDEX));
         }
         Time lastCheck = null;
-        if (!cursor.isNull(3)) {
+        if (!cursor.isNull(ReminderEntry.Columns.LASTCHECK_INDEX)) {
             lastCheck = new Time();
-            lastCheck.set(cursor.getLong(3));
+            lastCheck.set(cursor.getLong(ReminderEntry.Columns.LASTCHECK_INDEX));
         }
-        ReminderEntry entry = new ReminderEntry(cursor.getString(0),
-                                                cursor.getString(1),
+        ReminderEntry entry = new ReminderEntry(cursor.getString(ReminderEntry.Columns.LOCATION_INDEX),
+                                                cursor.getString(ReminderEntry.Columns.CONTENT_INDEX),
                                                 time);
         entry.lastCheck = lastCheck;
 
