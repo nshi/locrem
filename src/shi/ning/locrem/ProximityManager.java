@@ -1,7 +1,12 @@
 package shi.ning.locrem;
 
+import java.io.IOException;
+import java.util.List;
+
 import android.content.Context;
+import android.location.Address;
 import android.location.Criteria;
+import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -11,6 +16,7 @@ public final class ProximityManager {
     private final static int MIN_TIME = 300000; // 5 minutes
     private final static int MIN_DISTANCE = 200; // 200 meters
 
+    private final Geocoder mGeocoder;
     private final LocationManager mManager;
     private final ProximityListener mListener;
 
@@ -38,8 +44,22 @@ public final class ProximityManager {
 
     public ProximityManager(Context context) {
         mManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
+        mGeocoder = new Geocoder(context);
         mListener = new ProximityListener();
         register();
+    }
+
+    public Address getCoordinates(String address) {
+        try {
+            if (address == null)
+                return null;
+            final List<Address> addresses = mGeocoder.getFromLocationName(address, 1);
+            if (addresses != null && addresses.size() == 1)
+                return addresses.get(0);
+            return null;
+        } catch (IOException e) {
+            return null;
+        }
     }
 
     private void unregister() {
