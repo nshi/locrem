@@ -15,7 +15,8 @@ public final class ReminderEntries extends StorageAdapter {
                                                   + " last INTEGER,"
                                                   + " enabled TINYINT,"
                                                   + " loc text NOT NULL,"
-                                                  + " note text NOT NULL);";
+                                                  + " note text NOT NULL,"
+                                                  + " addrs BLOB NOT NULL);";
 
     public ReminderEntries(Context context) {
         super(context);
@@ -70,7 +71,8 @@ public final class ReminderEntries extends StorageAdapter {
         }
         ReminderEntry entry = new ReminderEntry(cursor.getString(ReminderEntry.Columns.LOCATION_INDEX),
                                                 cursor.getString(ReminderEntry.Columns.NOTE_INDEX),
-                                                time);
+                                                time,
+                                                ReminderEntry.deserializeAddresses(cursor.getBlob(ReminderEntry.Columns.ADDRESSES_INDEX)));
         entry.lastCheck = lastCheck;
 
         cursor.close();

@@ -29,7 +29,6 @@ public final class ReminderList extends ListActivity {
     private static final int DELETE_ID = Menu.FIRST + 1;
 
     private ReminderEntries mEntries;
-    private ReminderCaches mCaches;
     private LayoutInflater mLayoutFactory;
 
     private class EntryCursorAdapter extends CursorAdapter {
@@ -92,8 +91,6 @@ public final class ReminderList extends ListActivity {
 
         mEntries = new ReminderEntries(this);
         mEntries.open();
-        mCaches = new ReminderCaches(this);
-        mCaches.open();
     }
 
     @Override
@@ -150,10 +147,10 @@ public final class ReminderList extends ListActivity {
         switch (requestCode) {
         case ACTIVITY_CREATE:
         case ACTIVITY_EDIT:
+            if (resultCode == RESULT_OK)
+                fillData();
             break;
         }
-
-        fillData();
     }
 
     @Override

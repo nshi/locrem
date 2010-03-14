@@ -1,16 +1,22 @@
 package shi.ning.locrem;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 
 import android.database.Cursor;
 import android.location.Address;
-import android.os.Parcel;
-import android.os.Parcelable;
 import android.provider.BaseColumns;
 import android.text.format.Time;
 
-public final class ReminderEntry implements Parcelable {
-    public static final String KEY_ENTRY = "entry";
+public final class ReminderEntry implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     public long id;
     public String location;
@@ -22,53 +28,36 @@ public final class ReminderEntry implements Parcelable {
 
     public static final class Columns implements BaseColumns {
         public static final String LOCATION = "loc";
+        public static final String ADDRESSES = "addrs";
         public static final String NOTE = "note";
         public static final String LASTCHECK = "last";
         public static final String TIME = "time";
         public static final String ENABLED = "enabled";
 
-        public static final String[] QUERY_COLUMNS = { _ID,
+        public static final String[] QUERY_COLUMNS = {_ID,
+                                                      TIME,
+                                                      LASTCHECK,
+                                                      ENABLED,
                                                       LOCATION,
                                                       NOTE,
-                                                      LASTCHECK,
-                                                      TIME,
-                                                      ENABLED };
+                                                      ADDRESSES};
 
         // Have to be in sync with QUERY_COLUMNS
         public static final int ID_INDEX = 0;
-        public static final int LOCATION_INDEX = 1;
-        public static final int NOTE_INDEX = 2;
-        public static final int LASTCHECK_INDEX = 3;
-        public static final int TIME_INDEX = 4;
-        public static final int ENABLED_INDEX = 5;
-    }
-
-    private ReminderEntry(Parcel in) {
-        this.id = in.readLong();
-        long time = in.readLong();
-        this.time = null;
-        if (time > 0) {
-            this.time = new Time();
-            this.time.set(time);
-        }
-        time = in.readLong();
-        this.lastCheck = null;
-        if (time > 0) {
-            this.lastCheck = new Time();
-            this.lastCheck.set(time);
-        }
-        this.enabled = in.readByte() == 1;
-        this.location = in.readString();
-        this.note = in.readString();
-        in.readTypedList(this.addresses, null);
+        public static final int TIME_INDEX = 1;
+        public static final int LASTCHECK_INDEX = 2;
+        public static final int ENABLED_INDEX = 3;
+        public static final int LOCATION_INDEX = 4;
+        public static final int NOTE_INDEX = 5;
+        public static final int ADDRESSES_INDEX = 6;
     }
 
     public ReminderEntry(Cursor in) {
         this.id = in.getLong(Columns.ID_INDEX);
         long time = in.getLong(Columns.TIME_INDEX);
-        this.time = null;
+        this.time = new Time();
+        this.time.setToNow();
         if (time > 0) {
-            this.time = new Time();
             this.time.set(time);
         }
         time = in.getLong(Columns.LASTCHECK_INDEX);
@@ -80,59 +69,126 @@ public final class ReminderEntry implements Parcelable {
         this.enabled = in.getInt(Columns.ENABLED_INDEX) == 1;
         this.location = in.getString(Columns.LOCATION_INDEX);
         this.note = in.getString(Columns.NOTE_INDEX);
-        this.addresses = null;
+        this.addresses = deserializeAddresses(in.getBlob(Columns.ADDRESSES_INDEX));
     }
 
-    public ReminderEntry(String location, String note) {
-        this(-1, location, note, null);
+    public ReminderEntry(String location, String note, List<Address> addresses) {
+        this(-1, location, note, null, addresses);
     }
 
-    public ReminderEntry(String location, String note, Time time) {
-        this(-1, location, note, time);
+    public ReminderEntry(String location, String note, Time time, List<Address> addresses) {
+        this(-1, location, note, time, addresses);
     }
 
-    private ReminderEntry(long id, String location, String note, Time time) {
+    private ReminderEntry(long id, String location, String note, Time time, List<Address> addresses) {
         this.id = id;
+        if (time == null) {
+            time = new Time();
+            time.setToNow();
+        }
         this.time = time;
         this.lastCheck = null;
         this.location = location;
         this.note = note;
-        this.addresses = null;
+        this.addresses = addresses;
         this.enabled = true;
     }
 
-    public static final Parcelable.Creator<ReminderEntry> CREATE = new Parcelable.Creator<ReminderEntry>() {
-        @Override
-        public ReminderEntry createFromParcel(Parcel source) {
-            return new ReminderEntry(source);
+    public static byte[] serializeAddresses(List<Address> addresses) {
+        final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        final DataOutputStream out = new DataOutputStream(buffer);
+
+        // Length preceded byte array
+        try {
+            out.writeByte(addresses.size());
+            for (Address a : addresses) {
+                /*
+                 * longitude
+                 * latitude
+                 * admin area
+                 * sub admin area
+                 * locality
+                 * thoroughfare
+                 * feature name
+                 */
+                final String admin = a.getAdminArea();
+                final String subAdmin = a.getSubAdminArea();
+                final String locality = a.getLocality();
+                final String thoroughfare = a.getThoroughfare();
+                final String feature = a.getFeatureName();
+
+                out.writeDouble(a.getLongitude());
+                out.writeDouble(a.getLatitude());
+                if (admin != null)
+                    out.writeUTF(a.getAdminArea());
+                else
+                    out.writeUTF("");
+                if (subAdmin != null)
+                    out.writeUTF(a.getSubAdminArea());
+                else
+                    out.writeUTF("");
+                if (locality != null)
+                    out.writeUTF(a.getLocality());
+                else
+                    out.writeUTF("");
+                if (thoroughfare != null)
+                    out.writeUTF(a.getThoroughfare());
+                else
+                    out.writeUTF("");
+                if (feature != null)
+                    out.writeUTF(a.getFeatureName());
+                else
+                    out.writeUTF("");
+            }
+        } catch (IOException e) {
+            return null;
         }
 
-        @Override
-        public ReminderEntry[] newArray(int size) {
-            return new ReminderEntry[size];
-        }
-    };
-
-    @Override
-    public int describeContents() {
-        return 0;
+        return buffer.toByteArray();
     }
 
-    @Override
-    public void writeToParcel(Parcel out, int flags) {
-        out.writeLong(this.id);
-        if (this.time != null)
-            out.writeLong(this.time.toMillis(false));
-        else
-            out.writeLong(0);
-        if (this.lastCheck != null)
-            out.writeLong(this.lastCheck.toMillis(false));
-        else
-            out.writeLong(0);
-        out.writeByte((byte) (this.enabled ? 1 : 0));
-        out.writeString(this.location);
-        out.writeString(this.note);
-        // XXX not sure if this is gonna work.
-        out.writeTypedList(this.addresses);
+    public static List<Address> deserializeAddresses(byte[] buffer) {
+        final LinkedList<Address> addresses = new LinkedList<Address>();
+        final ByteArrayInputStream buf = new ByteArrayInputStream(buffer);
+        final DataInputStream in = new DataInputStream(buf);
+
+        try {
+            final byte size = in.readByte();
+            for (int i = 0; i < size; i++) {
+                /*
+                 * longitude
+                 * latitude
+                 * admin area
+                 * sub admin area
+                 * locality
+                 * thoroughfare
+                 * feature name
+                 */
+                final Address a = new Address(Locale.getDefault());
+
+                a.setLongitude(in.readDouble());
+                a.setLatitude(in.readDouble());
+                final String admin = in.readUTF();
+                final String subAdmin = in.readUTF();
+                final String locality = in.readUTF();
+                final String thoroughfare = in.readUTF();
+                final String feature = in.readUTF();
+
+                if (admin.length() > 0)
+                    a.setAdminArea(admin);
+                if (subAdmin.length() > 0)
+                    a.setSubAdminArea(subAdmin);
+                if (locality.length() > 0)
+                    a.setLocality(locality);
+                if (thoroughfare.length() > 0)
+                    a.setThoroughfare(thoroughfare);
+                if (feature.length() > 0)
+                    a.setFeatureName(feature);
+            }
+        } catch (IOException e) {
+            return null;
+        }
+
+        return addresses;
     }
 }

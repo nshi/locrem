@@ -3,8 +3,13 @@
     <string name="app_name">Locrem</string>
     <string name="add_entry">Add Entry</string>
     <string name="menu_delete">Delete</string>
+    <string name="date">Date</string>
+    <string name="time">Time</string>
     <string name="location">Location</string>
     <string name="note">Note</string>
     <string name="save">Save</string>
     <string name="cancel">Cancel</string>
+    <string name="ok">Ok</string>
+    <string name="network_unavailable">Network unavailable</string>
+    <string name="address_not_found">Address cannot be located</string>
 </resources>
