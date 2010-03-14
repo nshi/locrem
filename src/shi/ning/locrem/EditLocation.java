@@ -29,6 +29,9 @@ public final class EditLocation extends MapActivity {
     private static final int DIALOG_NETWORK_UNAVAILABLE = 0;
     private static final int DIALOG_NOT_FOUND = 1;
 
+    private MapController mMapController;
+    private List<Overlay> mMapOverlays;
+    private LocationOverlay mItemizedOverlay;
     private AlertDialog.Builder mAlertBuilder;
 
     private final class LocationOverlay extends ItemizedOverlay<OverlayItem> {
@@ -61,19 +64,17 @@ public final class EditLocation extends MapActivity {
     }
 
     @Override
-    protected void onCreate(Bundle arg0) {
-        super.onCreate(arg0);
+    protected void onCreate(Bundle state) {
+        super.onCreate(state);
         setContentView(R.layout.map);
 
         final MapView mapView = (MapView) findViewById(R.id.mapview);
         mapView.setBuiltInZoomControls(true);
 
-        final MapController mapController = mapView.getController();
-        final List<Overlay> mapOverlays = mapView.getOverlays();
+        mMapController = mapView.getController();
+        mMapOverlays = mapView.getOverlays();
         final Drawable marker = getResources().getDrawable(android.R.drawable.ic_dialog_alert);
-        final LocationOverlay itemizedOverlay = new LocationOverlay(marker);
-        mapOverlays.clear();
-        mapOverlays.add(itemizedOverlay);
+        mItemizedOverlay = new LocationOverlay(marker);
 
         mAlertBuilder = new AlertDialog.Builder(this);
 
@@ -86,32 +87,40 @@ public final class EditLocation extends MapActivity {
 
                 final Geocoder geo = new Geocoder(getApplicationContext());
                 List<Address> addrs = null;
-                final String addressLine = v.getText().toString();
-                itemizedOverlay.clear();
+                mItemizedOverlay.clear();
+                mMapOverlays.clear();
                 try {
-                    addrs = geo.getFromLocationName(addressLine, 1);
+                    addrs = geo.getFromLocationName(v.getText().toString(), 1);
                 } catch (IOException e) {
+                    mapView.postInvalidate();
                     showDialog(DIALOG_NETWORK_UNAVAILABLE);
                     return true;
                 }
 
                 if (addrs == null || addrs.size() == 0) {
+                    mapView.postInvalidate();
                     showDialog(DIALOG_NOT_FOUND);
                     return true;
                 }
 
-                for (Address a : addrs) {
-                    final GeoPoint point = new GeoPoint((int) (a.getLatitude() * 1E6),
-                                                        (int) (a.getLongitude() * 1E6));
-                    final OverlayItem item = new OverlayItem(point, "", addressLine);
-                    itemizedOverlay.addItem(item);
-                }
-                mapController.setCenter(itemizedOverlay.getCenter());
-                mapController.setZoom(16);
+                updateMap(addrs);
 
                 return true;
             }
         });
+
+        if (state == null)
+            return;
+
+        final String locationString = state.getString(ReminderEntry.Columns.LOCATION);
+        if (locationString != null)
+            location.setText(locationString);
+        final byte[] buffer = state.getByteArray(ReminderEntry.Columns.ADDRESSES);
+        if (buffer != null) {
+            final List<Address> addresses = ReminderEntry.deserializeAddresses(buffer);
+            if (addresses != null)
+                updateMap(addresses);
+        }
     }
 
     @Override
@@ -141,4 +150,15 @@ public final class EditLocation extends MapActivity {
         return false;
     }
 
+    private void updateMap(List<Address> addrs) {
+        for (Address a : addrs) {
+            final GeoPoint point = new GeoPoint((int) (a.getLatitude() * 1E6),
+                                                (int) (a.getLongitude() * 1E6));
+            final OverlayItem item = new OverlayItem(point, "", "");
+            mItemizedOverlay.addItem(item);
+        }
+        mMapOverlays.add(mItemizedOverlay);
+        mMapController.setCenter(mItemizedOverlay.getCenter());
+        mMapController.setZoom(16);
+    }
 }
