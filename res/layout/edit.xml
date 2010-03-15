@@ -27,7 +27,7 @@
                   android:layout_gravity="center_vertical"
                   android:gravity="center"
                   android:textColor="?android:attr/textColorPrimary"
-                  android:text="@string/location" />
+                  android:hint="@string/location" />
     </LinearLayout>
     <ImageView android:layout_width="fill_parent"
                android:layout_height="wrap_content"
@@ -64,7 +64,7 @@
                       android:gravity="center"
                       android:layout_weight="1"
                       android:textColor="?android:attr/textColorPrimary"
-                      android:text="@string/date" />
+                      android:hint="@string/date" />
             <TextView android:id="@+id/time_label"
                       android:clickable="true"
                       android:focusable="true"
@@ -73,18 +73,16 @@
                       android:gravity="center"
                       android:layout_weight="1"
                       android:textColor="?android:attr/textColorPrimary"
-                      android:text="@string/time" />
+                      android:hint="@string/time" />
         </LinearLayout>
     </LinearLayout>
 
-    <TextView android:layout_width="wrap_content"
-              android:layout_height="wrap_content"
-              android:text="@string/note" />
     <EditText android:id="@+id/note"
               android:layout_width="fill_parent"
               android:layout_height="wrap_content"
               android:layout_weight="1"
               android:scrollbars="vertical"
+              android:hint="@string/note"
               android:gravity="top" />
 
     <LinearLayout android:orientation="horizontal"
