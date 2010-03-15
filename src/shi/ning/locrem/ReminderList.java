@@ -105,25 +105,11 @@ public final class ReminderList extends ListActivity {
         case DELETE_ID:
             AdapterContextMenuInfo info = (AdapterContextMenuInfo) item.getMenuInfo();
             deleteEntry(info.id);
-            // TODO should really just remove the one deleted without refreshing
-            // the whole list.
             fillData();
             return true;
         }
 
         return super.onContextItemSelected(item);
-    }
-
-    @Override
-    protected void onRestoreInstanceState(Bundle state) {
-        // TODO Auto-generated method stub
-        super.onRestoreInstanceState(state);
-    }
-
-    @Override
-    protected void onStart() {
-        // TODO Auto-generated method stub
-        super.onStart();
     }
 
     @Override
@@ -141,7 +127,6 @@ public final class ReminderList extends ListActivity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        // TODO Auto-generated method stub
         super.onActivityResult(requestCode, resultCode, data);
 
         switch (requestCode) {
@@ -151,30 +136,6 @@ public final class ReminderList extends ListActivity {
                 fillData();
             break;
         }
-    }
-
-    @Override
-    protected void onPause() {
-        // TODO Auto-generated method stub
-        super.onPause();
-    }
-
-    @Override
-    protected void onStop() {
-        // TODO Auto-generated method stub
-        super.onStop();
-    }
-
-    @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        // TODO Auto-generated method stub
-        super.onSaveInstanceState(outState);
-    }
-
-    @Override
-    protected void onDestroy() {
-        // TODO Auto-generated method stub
-        super.onDestroy();
     }
 
     private void fillData() {

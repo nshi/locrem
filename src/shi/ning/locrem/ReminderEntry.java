@@ -73,14 +73,14 @@ public final class ReminderEntry implements Serializable {
     }
 
     public ReminderEntry(String location, String note, List<Address> addresses) {
-        this(-1, location, note, null, addresses);
+        this(-1, location, note, null, null, addresses);
     }
 
     public ReminderEntry(String location, String note, Time time, List<Address> addresses) {
-        this(-1, location, note, time, addresses);
+        this(-1, location, note, time, null, addresses);
     }
 
-    private ReminderEntry(long id, String location, String note, Time time, List<Address> addresses) {
+    public ReminderEntry(long id, String location, String note, Time time, Time lastCheck, List<Address> addresses) {
         this.id = id;
         if (time == null) {
             time = new Time();
@@ -119,26 +119,11 @@ public final class ReminderEntry implements Serializable {
 
                 out.writeDouble(a.getLongitude());
                 out.writeDouble(a.getLatitude());
-                if (admin != null)
-                    out.writeUTF(a.getAdminArea());
-                else
-                    out.writeUTF("");
-                if (subAdmin != null)
-                    out.writeUTF(a.getSubAdminArea());
-                else
-                    out.writeUTF("");
-                if (locality != null)
-                    out.writeUTF(a.getLocality());
-                else
-                    out.writeUTF("");
-                if (thoroughfare != null)
-                    out.writeUTF(a.getThoroughfare());
-                else
-                    out.writeUTF("");
-                if (feature != null)
-                    out.writeUTF(a.getFeatureName());
-                else
-                    out.writeUTF("");
+                out.writeUTF(admin != null ? admin : "");
+                out.writeUTF(subAdmin != null ? subAdmin : "");
+                out.writeUTF(locality != null ? locality : "");
+                out.writeUTF(thoroughfare != null ? thoroughfare : "");
+                out.writeUTF(feature != null ? feature : "");
             }
         } catch (IOException e) {
             return null;
@@ -184,6 +169,8 @@ public final class ReminderEntry implements Serializable {
                     a.setThoroughfare(thoroughfare);
                 if (feature.length() > 0)
                     a.setFeatureName(feature);
+
+                addresses.add(a);
             }
         } catch (IOException e) {
             return null;

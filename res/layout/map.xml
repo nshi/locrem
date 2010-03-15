@@ -3,10 +3,21 @@
               android:layout_width="fill_parent"
               android:layout_height="fill_parent"
               android:orientation="vertical">
-    <EditText android:id="@+id/edit_location"
-              android:layout_width="fill_parent"
-              android:layout_height="wrap_content"
-              android:imeOptions="actionSearch" />
+    <LinearLayout android:layout_width="fill_parent"
+                  android:layout_height="wrap_content"
+                  android:orientation="horizontal">
+        <EditText android:id="@+id/edit_location"
+                  android:layout_width="wrap_content"
+                  android:layout_height="wrap_content"
+                  android:layout_weight="1"
+                  android:inputType="textPostalAddress"
+                  android:imeOptions="actionSearch" />
+        <Button android:id="@+id/save_location"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="fill_horizontal"
+                android:text="@string/save" />
+    </LinearLayout>
     <RelativeLayout android:id="@+id/map_layout"
                     android:orientation="vertical"
                     android:layout_width="fill_parent"

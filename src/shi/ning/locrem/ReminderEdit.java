@@ -9,6 +9,7 @@ import android.app.TimePickerDialog.OnTimeSetListener;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.EditText;
@@ -82,18 +83,17 @@ public final class ReminderEdit extends Activity {
         mLocationLabel = (TextView) findViewById(R.id.location_label);
         mNote = (EditText) findViewById(R.id.note);
 
-        Button save = (Button) findViewById(R.id.save);
-        Button cancel = (Button) findViewById(R.id.cancel);
+        final Button save = (Button) findViewById(R.id.save);
+        final Button cancel = (Button) findViewById(R.id.cancel);
 
         mEntries = new ReminderEntries(this);
-        mEntries.open();
         mId = -1;
         if (savedInstanceState != null)
             mId = savedInstanceState.getLong(ReminderEntry.Columns._ID);
         else
             mId = getIntent().getLongExtra(ReminderEntry.Columns._ID, -1);
 
-        save.setOnClickListener(new View.OnClickListener() {
+        save.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent();
@@ -104,7 +104,7 @@ public final class ReminderEdit extends Activity {
             }
         });
 
-        cancel.setOnClickListener(new View.OnClickListener() {
+        cancel.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
                 setResult(RESULT_CANCELED);
@@ -137,6 +137,7 @@ public final class ReminderEdit extends Activity {
     protected void onResume() {
         super.onResume();
 
+        mEntries.open();
         populateFields();
     }
 
@@ -147,7 +148,6 @@ public final class ReminderEdit extends Activity {
         switch (requestCode) {
         case ACTIVITY_LOCATION:
             if (resultCode == RESULT_OK) {
-                // TODO unpack location data
                 mEntry.location = data.getStringExtra(ReminderEntry.Columns.LOCATION);
                 mEntry.addresses = ReminderEntry.deserializeAddresses(data.getByteArrayExtra(ReminderEntry.Columns.ADDRESSES));
                 updateLocationLabel();
@@ -159,7 +159,7 @@ public final class ReminderEdit extends Activity {
     private void populateFields() {
         // TODO Check if there is any unsaved data, if so, load it from the
         // temporary table, otherwise wipe the slate clean.
-        if (mId >= 0)
+        if (mEntry == null && mId >= 0)
             mEntry = mEntries.getEntry(mId);
 
         if (mEntry != null)
@@ -197,6 +197,7 @@ public final class ReminderEdit extends Activity {
     }
 
     private void saveEntry() {
+        mEntry.note = mNote.getText().toString();
         if (mId >= 0)
             mEntries.updateEntry(mEntry);
         else

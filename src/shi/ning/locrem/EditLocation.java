@@ -6,13 +6,18 @@ import java.util.List;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
 import android.location.Address;
 import android.location.Geocoder;
 import android.os.Bundle;
 import android.view.KeyEvent;
+import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
@@ -33,6 +38,7 @@ public final class EditLocation extends MapActivity {
     private List<Overlay> mMapOverlays;
     private LocationOverlay mItemizedOverlay;
     private AlertDialog.Builder mAlertBuilder;
+    private List<Address> mAddresses;
 
     private final class LocationOverlay extends ItemizedOverlay<OverlayItem> {
         private final ArrayList<OverlayItem> mItems;
@@ -78,48 +84,64 @@ public final class EditLocation extends MapActivity {
 
         mAlertBuilder = new AlertDialog.Builder(this);
 
+        final InputMethodManager ime = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
         final EditText location = (EditText) findViewById(R.id.edit_location);
         location.setOnEditorActionListener(new OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
                 if (actionId != EditorInfo.IME_ACTION_SEARCH)
                     return false;
+                ime.hideSoftInputFromWindow(v.getWindowToken(), 0);
 
                 final Geocoder geo = new Geocoder(getApplicationContext());
-                List<Address> addrs = null;
                 mItemizedOverlay.clear();
                 mMapOverlays.clear();
                 try {
-                    addrs = geo.getFromLocationName(v.getText().toString(), 1);
+                    mAddresses = geo.getFromLocationName(v.getText().toString(), 1);
                 } catch (IOException e) {
                     mapView.postInvalidate();
                     showDialog(DIALOG_NETWORK_UNAVAILABLE);
                     return true;
                 }
 
-                if (addrs == null || addrs.size() == 0) {
+                if (mAddresses == null || mAddresses.size() == 0) {
                     mapView.postInvalidate();
                     showDialog(DIALOG_NOT_FOUND);
                     return true;
                 }
 
-                updateMap(addrs);
+                updateMap();
 
                 return true;
             }
         });
 
-        if (state == null)
-            return;
+        final Button save = (Button) findViewById(R.id.save_location);
+        save.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent();
+                intent.putExtra(ReminderEntry.Columns.LOCATION,
+                                location.getText().toString());
+                intent.putExtra(ReminderEntry.Columns.ADDRESSES,
+                                ReminderEntry.serializeAddresses(mAddresses));
+                setResult(RESULT_OK, intent);
+                finish();
+            }
+        });
 
-        final String locationString = state.getString(ReminderEntry.Columns.LOCATION);
+        Bundle extras = state;
+        if (extras == null)
+            extras = getIntent().getExtras();
+
+        final String locationString = extras.getString(ReminderEntry.Columns.LOCATION);
         if (locationString != null)
             location.setText(locationString);
-        final byte[] buffer = state.getByteArray(ReminderEntry.Columns.ADDRESSES);
+        final byte[] buffer = extras.getByteArray(ReminderEntry.Columns.ADDRESSES);
         if (buffer != null) {
-            final List<Address> addresses = ReminderEntry.deserializeAddresses(buffer);
-            if (addresses != null)
-                updateMap(addresses);
+            mAddresses = ReminderEntry.deserializeAddresses(buffer);
+            if (mAddresses != null)
+                updateMap();
         }
     }
 
@@ -150,8 +172,8 @@ public final class EditLocation extends MapActivity {
         return false;
     }
 
-    private void updateMap(List<Address> addrs) {
-        for (Address a : addrs) {
+    private void updateMap() {
+        for (Address a : mAddresses) {
             final GeoPoint point = new GeoPoint((int) (a.getLatitude() * 1E6),
                                                 (int) (a.getLongitude() * 1E6));
             final OverlayItem item = new OverlayItem(point, "", "");

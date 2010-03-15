@@ -31,6 +31,8 @@ public final class ReminderEntries extends StorageAdapter {
         initialValues.put(ReminderEntry.Columns.LOCATION, entry.location);
         initialValues.put(ReminderEntry.Columns.NOTE, entry.note);
         initialValues.put(ReminderEntry.Columns.ENABLED, entry.enabled ? 1 : 0);
+        initialValues.put(ReminderEntry.Columns.ADDRESSES,
+                          ReminderEntry.serializeAddresses(entry.addresses));
         if (entry.time != null)
             initialValues.put(ReminderEntry.Columns.TIME, entry.time.toMillis(false));
         if (entry.lastCheck != null)
@@ -69,9 +71,10 @@ public final class ReminderEntries extends StorageAdapter {
             lastCheck = new Time();
             lastCheck.set(cursor.getLong(ReminderEntry.Columns.LASTCHECK_INDEX));
         }
-        ReminderEntry entry = new ReminderEntry(cursor.getString(ReminderEntry.Columns.LOCATION_INDEX),
+        ReminderEntry entry = new ReminderEntry(cursor.getLong(ReminderEntry.Columns.ID_INDEX),
+                                                cursor.getString(ReminderEntry.Columns.LOCATION_INDEX),
                                                 cursor.getString(ReminderEntry.Columns.NOTE_INDEX),
-                                                time,
+                                                time, lastCheck,
                                                 ReminderEntry.deserializeAddresses(cursor.getBlob(ReminderEntry.Columns.ADDRESSES_INDEX)));
         entry.lastCheck = lastCheck;
 
@@ -80,19 +83,19 @@ public final class ReminderEntries extends StorageAdapter {
         return entry;
     }
 
-    public boolean updateEntry(ReminderEntry entry) {
+    public int updateEntry(ReminderEntry entry) {
         ContentValues args = new ContentValues();
         args.put(ReminderEntry.Columns.LOCATION, entry.location);
         args.put(ReminderEntry.Columns.NOTE, entry.note);
         args.put(ReminderEntry.Columns.ENABLED, entry.enabled ? 1 : 0);
-        // XXX not sure if this is gonna work if I don't have all columns
-        // present in the args
+        args.put(ReminderEntry.Columns.ADDRESSES,
+                 ReminderEntry.serializeAddresses(entry.addresses));
         if (entry.time != null)
             args.put(ReminderEntry.Columns.TIME, entry.time.toMillis(false));
         if (entry.lastCheck != null)
             args.put(ReminderEntry.Columns.LASTCHECK, entry.lastCheck.toMillis(false));
 
         return mDb.update(DATABASE_TABLE, args,
-                          ReminderEntry.Columns._ID + "=" + entry.id, null) > 0;
+                          ReminderEntry.Columns._ID + "=" + entry.id, null);
     }
 }
