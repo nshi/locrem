@@ -30,6 +30,7 @@ public final class ReminderList extends ListActivity {
 
     private ReminderEntries mEntries;
     private LayoutInflater mLayoutFactory;
+    private ProximityManager mProximity;
 
     private class EntryCursorAdapter extends CursorAdapter {
         public EntryCursorAdapter(Context context, Cursor c) {
@@ -91,6 +92,7 @@ public final class ReminderList extends ListActivity {
 
         mEntries = new ReminderEntries(this);
         mEntries.open();
+        mProximity = new ProximityManager(this);
     }
 
     @Override

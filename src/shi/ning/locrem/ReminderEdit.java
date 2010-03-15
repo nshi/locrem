@@ -149,7 +149,8 @@ public final class ReminderEdit extends Activity {
         case ACTIVITY_LOCATION:
             if (resultCode == RESULT_OK) {
                 mEntry.location = data.getStringExtra(ReminderEntry.Columns.LOCATION);
-                mEntry.addresses = ReminderEntry.deserializeAddresses(data.getByteArrayExtra(ReminderEntry.Columns.ADDRESSES));
+                mEntry.addresses =
+                    ReminderEntry.deserializeAddresses(data.getByteArrayExtra(ReminderEntry.Columns.ADDRESSES));
                 updateLocationLabel();
             }
             break;

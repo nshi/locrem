@@ -71,11 +71,12 @@ public final class ReminderEntries extends StorageAdapter {
             lastCheck = new Time();
             lastCheck.set(cursor.getLong(ReminderEntry.Columns.LASTCHECK_INDEX));
         }
-        ReminderEntry entry = new ReminderEntry(cursor.getLong(ReminderEntry.Columns.ID_INDEX),
-                                                cursor.getString(ReminderEntry.Columns.LOCATION_INDEX),
-                                                cursor.getString(ReminderEntry.Columns.NOTE_INDEX),
-                                                time, lastCheck,
-                                                ReminderEntry.deserializeAddresses(cursor.getBlob(ReminderEntry.Columns.ADDRESSES_INDEX)));
+        ReminderEntry entry =
+            new ReminderEntry(cursor.getLong(ReminderEntry.Columns.ID_INDEX),
+                              cursor.getString(ReminderEntry.Columns.LOCATION_INDEX),
+                              cursor.getString(ReminderEntry.Columns.NOTE_INDEX),
+                              time, lastCheck,
+                              ReminderEntry.deserializeAddresses(cursor.getBlob(ReminderEntry.Columns.ADDRESSES_INDEX)));
         entry.lastCheck = lastCheck;
 
         cursor.close();

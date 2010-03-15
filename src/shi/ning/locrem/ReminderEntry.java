@@ -76,11 +76,13 @@ public final class ReminderEntry implements Serializable {
         this(-1, location, note, null, null, addresses);
     }
 
-    public ReminderEntry(String location, String note, Time time, List<Address> addresses) {
+    public ReminderEntry(String location, String note, Time time,
+                         List<Address> addresses) {
         this(-1, location, note, time, null, addresses);
     }
 
-    public ReminderEntry(long id, String location, String note, Time time, Time lastCheck, List<Address> addresses) {
+    public ReminderEntry(long id, String location, String note,
+                         Time time, Time lastCheck, List<Address> addresses) {
         this.id = id;
         if (time == null) {
             time = new Time();
