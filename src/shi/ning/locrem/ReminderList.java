@@ -21,7 +21,7 @@ import android.widget.Toast;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 
 public final class ReminderList extends ListActivity {
-    public static final String TAG = "locrem";
+    private static final String TAG = "ReminderList";
 
     private static final int ACTIVITY_CREATE = 0;
     private static final int ACTIVITY_EDIT = 1;
