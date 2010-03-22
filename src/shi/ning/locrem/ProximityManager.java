@@ -22,6 +22,7 @@ import android.text.format.Time;
 import android.util.Log;
 
 public final class ProximityManager extends Service {
+    private final static String TAG = "ProximityManager";
     private final static int MIN_TIME = 300000; // 5 minutes
     private final static int MIN_DISTANCE = 200; // 200 meters
     private final static int RANGE = 500; // 500 meters
@@ -36,13 +37,20 @@ public final class ProximityManager extends Service {
         @Override
         public void onStatusChanged(String provider, int status, Bundle extras) {
             // XXX I'm not sure if I care about this
+            if (Log.isLoggable(TAG, Log.DEBUG))
+                Log.d(TAG, "provider " + provider + " status changed to " + status);
         }
 
         @Override
-        public void onProviderEnabled(String provider) {}
+        public void onProviderEnabled(String provider) {
+            if (Log.isLoggable(TAG, Log.DEBUG))
+                Log.d(TAG, "provider " + provider + " enabled");
+        }
 
         @Override
         public void onProviderDisabled(String provider) {
+            if (Log.isLoggable(TAG, Log.DEBUG))
+                Log.d(TAG, provider + " disabled");
             unregister();
             register();
         }
@@ -58,14 +66,20 @@ public final class ProximityManager extends Service {
                 return;
 
             for (ReminderEntry entry : entries) {
-                if (entry.time.after(now))
+                if (entry.time.after(now)) {
+                    if (Log.isLoggable(TAG, Log.VERBOSE))
+                        Log.v(TAG, "too early to execute entry " + entry.id
+                              + " which is scheduled after " + entry.time.toString());
                     continue;
+                }
 
                 for (Address a : entry.addresses) {
                     if (inRange(currentAddress, a)) {
                         // Alert the user, ask if want to disable it, should block
                         notifyUser(entry.note);
-                        Log.v(ReminderList.TAG, "in range to " + a.toString());
+                        if (Log.isLoggable(TAG, Log.DEBUG))
+                            Log.d(TAG, "close to " + a.toString());
+                        break;
                     }
                 }
             }
@@ -83,6 +97,8 @@ public final class ProximityManager extends Service {
         mEntries = new ReminderEntries(mContext);
         mEntries.open();
         register();
+        if (Log.isLoggable(TAG, Log.VERBOSE))
+            Log.v(TAG, "created");
     }
 
     @Override
@@ -99,16 +115,23 @@ public final class ProximityManager extends Service {
 
     public Address locationToAddress(Location location) {
         try {
-            if (location == null)
+            if (location == null) {
+                if (Log.isLoggable(TAG, Log.VERBOSE))
+                    Log.v(TAG, "cannot reverse geocode null location");
                 return null;
+            }
             final List<Address> addresses =
                 mGeocoder.getFromLocation(location.getLatitude(),
                                           location.getLongitude(),
                                           1);
             if (addresses != null && addresses.size() == 1)
                 return addresses.get(0);
+            if (Log.isLoggable(TAG, Log.DEBUG))
+                Log.d(TAG, "failed reverse geocoding " + location.toString());
             return null;
         } catch (IOException e) {
+            if (Log.isLoggable(TAG, Log.DEBUG))
+                Log.d(TAG, "error reverse geocoding " + location.toString());
             return null;
         }
     }
@@ -125,9 +148,15 @@ public final class ProximityManager extends Service {
          * TODO Should ask user if they want to enable location service
          * if no provider is available.
          */
-        if (provider != null)
+        if (provider != null) {
             mManager.requestLocationUpdates(provider, MIN_TIME, MIN_DISTANCE,
                                             mListener);
+            if (Log.isLoggable(TAG, Log.VERBOSE))
+                Log.v(TAG, "registered to location provider " + provider);
+        } else {
+            if (Log.isLoggable(TAG, Log.DEBUG))
+                Log.d(TAG, "no location provider available");
+        }
     }
 
     private boolean inRange(Address current, Address test) {
@@ -156,22 +185,40 @@ public final class ProximityManager extends Service {
                                          test.getLatitude(),
                                          test.getLongitude(),
                                          distance);
-                if (distance[0] <= RANGE)
+                if (distance[0] <= RANGE) {
+                    if (Log.isLoggable(TAG, Log.VERBOSE))
+                        Log.v(TAG, "coordinates close to " + test.toString());
                     return true;
+                }
         }
         if (admin == null || curAdmin == null
-            || !admin.equals(curAdmin))
+            || !admin.equals(curAdmin)) {
+            if (Log.isLoggable(TAG, Log.VERBOSE))
+                Log.v(TAG, "admin: " + admin + " != " + curAdmin);
             return false;
+        }
         if (subAdmin != null && curSubAdmin != null
-            && !subAdmin.equals(curSubAdmin))
+            && !subAdmin.equals(curSubAdmin)) {
+            if (Log.isLoggable(TAG, Log.VERBOSE))
+                Log.v(TAG, "subAdmin: " + subAdmin + " != " + curSubAdmin);
             return false;
+        }
         if (locality != null && curLocality != null
-            && !locality.equals(curLocality))
+            && !locality.equals(curLocality)) {
+            if (Log.isLoggable(TAG, Log.VERBOSE))
+                Log.v(TAG, "locality: " + locality + " != " + curLocality);
             return false;
+        }
         if (thoroughfare != null && curThoroughfare != null
-            && !thoroughfare.equals(curThoroughfare))
+            && !thoroughfare.equals(curThoroughfare)) {
+            if (Log.isLoggable(TAG, Log.VERBOSE))
+                Log.v(TAG, "thoroughfare: " + thoroughfare + " != "
+                      + curThoroughfare);
             return false;
+        }
 
+        if (Log.isLoggable(TAG, Log.VERBOSE))
+            Log.v(TAG, "address close to " + test.toString());
         return true;
     }
 
