@@ -92,7 +92,8 @@ public final class ReminderList extends ListActivity {
 
         mEntries = new ReminderEntries(this);
         mEntries.open();
-        mProximity = new ProximityManager(this);
+        mProximity = null;
+        startService(new Intent(this, ProximityManager.class));
     }
 
     @Override
@@ -141,7 +142,7 @@ public final class ReminderList extends ListActivity {
     }
 
     private void fillData() {
-        Cursor c = mEntries.getAllEntries();
+        Cursor c = mEntries.getAllAsCursor();
         startManagingCursor(c);
 
         EntryCursorAdapter notes = new EntryCursorAdapter(this, c);
@@ -149,8 +150,8 @@ public final class ReminderList extends ListActivity {
     }
 
     private void createEntry() {
-        Intent intent = new Intent(this, ReminderEdit.class);
-        startActivityForResult(intent, ACTIVITY_CREATE);
+        startActivityForResult(new Intent(this, ReminderEdit.class),
+                               ACTIVITY_CREATE);
     }
 
     private void editEntry(long id) {
