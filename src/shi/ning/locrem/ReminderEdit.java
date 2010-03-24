@@ -225,6 +225,6 @@ public final class ReminderEdit extends Activity {
     }
 
     private void updateTimeLabel() {
-        mTimeLabel.setText(mEntry.time.format("%r"));
+        mTimeLabel.setText(mEntry.time.format("%I:%M %p"));
     }
 }
