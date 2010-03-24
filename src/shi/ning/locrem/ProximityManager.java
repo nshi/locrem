@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
+import shi.ning.locrem.ProximityManagerService.Stub;
 import shi.ning.locrem.ReminderEntry.Columns;
 import android.app.AlarmManager;
 import android.app.Notification;
@@ -24,6 +25,7 @@ import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.os.RemoteException;
 import android.text.format.Time;
 import android.util.Log;
 
@@ -40,6 +42,16 @@ public final class ProximityManager extends Service {
     static {
         mCriteria.setAccuracy(Criteria.ACCURACY_COARSE);
     }
+
+    private final Stub mBinder = new Stub() {
+        @Override
+        public void onEntryChanged(long id) throws RemoteException {
+            if (Log.isLoggable(TAG, Log.VERBOSE))
+                Log.v(TAG, "remote access, entry " + id + " changed");
+
+            ProximityManager.this.onEntryChanged(id);
+        }
+    };
 
     private Context mContext;
     private Geocoder mGeocoder;
@@ -95,8 +107,7 @@ public final class ProximityManager extends Service {
 
     @Override
     public IBinder onBind(Intent intent) {
-        // TODO Auto-generated method stub
-        return null;
+        return mBinder;
     }
 
     @Override

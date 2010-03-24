@@ -1,12 +1,17 @@
 package shi.ning.locrem;
 
+import shi.ning.locrem.ReminderEntry.Columns;
 import android.app.ListActivity;
+import android.content.ComponentName;
 import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.IBinder;
+import android.os.RemoteException;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.LayoutInflater;
@@ -32,6 +37,18 @@ public final class ReminderList extends ListActivity {
     private static final int DELETE_ID = Menu.FIRST + 1;
 
     private LayoutInflater mLayoutFactory;
+    private ProximityManagerService mPMService = null;
+    private final ServiceConnection mPMConnection = new ServiceConnection() {
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            mPMService = null;
+        }
+
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            mPMService = ProximityManagerService.Stub.asInterface(service);
+        }
+    };
 
     private class EntryCursorAdapter extends CursorAdapter {
         public EntryCursorAdapter(Context context, Cursor c) {
@@ -80,6 +97,10 @@ public final class ReminderList extends ListActivity {
             if (Log.isLoggable(TAG, Log.DEBUG))
                 Log.d(TAG,
                       entry.id + " is " + (entry.enabled ? "enabled" : "disabled"));
+
+            try {
+                mPMService.onEntryChanged(entry.id);
+            } catch (RemoteException e) {}
         } else {
             if (Log.isLoggable(TAG, Log.DEBUG))
                 Log.d(TAG, "failed to "
@@ -134,7 +155,9 @@ public final class ReminderList extends ListActivity {
         if (Log.isLoggable(TAG, Log.VERBOSE))
             Log.v(TAG, "starting proximity manager service");
 
-        startService(new Intent(this, ProximityManager.class));
+        final Intent intent = new Intent(this, ProximityManager.class);
+        startService(intent);
+        bindService(intent, mPMConnection, 0);
     }
 
     @Override
@@ -142,6 +165,13 @@ public final class ReminderList extends ListActivity {
         super.onResume();
 
         fillData();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+
+        unbindService(mPMConnection);
     }
 
     @Override
@@ -157,8 +187,17 @@ public final class ReminderList extends ListActivity {
         switch (requestCode) {
         case ACTIVITY_CREATE:
         case ACTIVITY_EDIT:
-            if (resultCode == RESULT_OK)
+            if (resultCode == RESULT_OK) {
+                final long id = data.getLongExtra(Columns._ID, -1);
+                if (id == -1)
+                    break;
+
+                try {
+                    mPMService.onEntryChanged(id);
+                } catch (RemoteException e) {}
+
                 fillData();
+            }
             break;
         }
     }
@@ -180,7 +219,7 @@ public final class ReminderList extends ListActivity {
 
     private void editEntry(long id) {
         Intent intent = new Intent(this, ReminderEdit.class);
-        intent.putExtra(ReminderEntry.Columns._ID, id);
+        intent.putExtra(Columns._ID, id);
         startActivityForResult(intent, ACTIVITY_EDIT);
     }
 
