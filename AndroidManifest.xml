@@ -18,6 +18,9 @@
 
         <uses-library android:name="com.google.android.maps" />
         <service android:name=".ProximityManager" />
+        <provider android:name=".ReminderProvider"
+                  android:authorities="shi.ning.locrem.reminderprovider"
+                  android:syncable="false" />
     </application>
     <uses-sdk android:minSdkVersion="3"
               android:maxSdkVersion="7"

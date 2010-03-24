@@ -1,10 +1,13 @@
 package shi.ning.locrem;
 
 import android.app.ListActivity;
+import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.ContextMenu;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -28,9 +31,7 @@ public final class ReminderList extends ListActivity {
 
     private static final int DELETE_ID = Menu.FIRST + 1;
 
-    private ReminderEntries mEntries;
     private LayoutInflater mLayoutFactory;
-    private ProximityManager mProximity;
 
     private class EntryCursorAdapter extends CursorAdapter {
         public EntryCursorAdapter(Context context, Cursor c) {
@@ -70,12 +71,28 @@ public final class ReminderList extends ListActivity {
         indicator.setImageResource(enabled ? android.R.drawable.button_onoff_indicator_off
                                           : android.R.drawable.button_onoff_indicator_on);
         entry.enabled = !enabled;
-        mEntries.updateEntry(entry);
+
+        final Uri uri = ContentUris.withAppendedId(ReminderProvider.CONTENT_URI,
+                                                   entry.id);
+        if (getContentResolver().update(uri,
+                                        ReminderProvider.packEntryToValues(entry),
+                                        null, null) == 1) {
+            if (Log.isLoggable(TAG, Log.DEBUG))
+                Log.d(TAG,
+                      entry.id + " is " + (entry.enabled ? "enabled" : "disabled"));
+        } else {
+            if (Log.isLoggable(TAG, Log.DEBUG))
+                Log.d(TAG, "failed to "
+                      + (entry.enabled ? "enable" : "disable") + entry.id);
+        }
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        if (Log.isLoggable(TAG, Log.DEBUG))
+            Log.d(TAG, "created");
 
         mLayoutFactory = LayoutInflater.from(this);
 
@@ -89,11 +106,6 @@ public final class ReminderList extends ListActivity {
                 createEntry();
             }
         });
-
-        mEntries = new ReminderEntries(this);
-        mEntries.open();
-        mProximity = null;
-        startService(new Intent(this, ProximityManager.class));
     }
 
     @Override
@@ -113,6 +125,16 @@ public final class ReminderList extends ListActivity {
         }
 
         return super.onContextItemSelected(item);
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+
+        if (Log.isLoggable(TAG, Log.VERBOSE))
+            Log.v(TAG, "starting proximity manager service");
+
+        startService(new Intent(this, ProximityManager.class));
     }
 
     @Override
@@ -142,9 +164,11 @@ public final class ReminderList extends ListActivity {
     }
 
     private void fillData() {
-        Cursor c = mEntries.getAllAsCursor();
-        startManagingCursor(c);
+        final Cursor c = managedQuery(ReminderProvider.CONTENT_URI,
+                                      null, null, null, null);
 
+        if (Log.isLoggable(TAG, Log.VERBOSE))
+            Log.v(TAG, c.getCount() + " entries retrieved");
         EntryCursorAdapter notes = new EntryCursorAdapter(this, c);
         setListAdapter(notes);
     }
@@ -161,7 +185,8 @@ public final class ReminderList extends ListActivity {
     }
 
     private void deleteEntry(long id) {
-        if (mEntries.deleteEntry(id) != 1)
+        final Uri uri = ContentUris.withAppendedId(ReminderProvider.CONTENT_URI, id);
+        if (getContentResolver().delete(uri, null, null) != 1)
             notify("Failed to delete entry: " + id, Toast.LENGTH_SHORT);
     }
 

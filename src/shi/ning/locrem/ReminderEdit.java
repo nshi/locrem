@@ -1,13 +1,19 @@
 package shi.ning.locrem;
 
+import shi.ning.locrem.ReminderEntry.Columns;
 import android.app.Activity;
 import android.app.DatePickerDialog;
 import android.app.Dialog;
 import android.app.TimePickerDialog;
 import android.app.DatePickerDialog.OnDateSetListener;
 import android.app.TimePickerDialog.OnTimeSetListener;
+import android.content.ContentUris;
+import android.content.ContentValues;
 import android.content.Intent;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
@@ -17,11 +23,11 @@ import android.widget.TextView;
 import android.widget.TimePicker;
 
 public final class ReminderEdit extends Activity {
+    private static final String TAG = "ReminderEdit";
     private static final int ACTIVITY_LOCATION = 0;
     private static final int DIALOG_DATE = 1;
     private static final int DIALOG_TIME = 2;
 
-    private ReminderEntries mEntries;
     private long mId;
     private ReminderEntry mEntry;
 
@@ -86,18 +92,17 @@ public final class ReminderEdit extends Activity {
         final Button save = (Button) findViewById(R.id.save);
         final Button cancel = (Button) findViewById(R.id.cancel);
 
-        mEntries = new ReminderEntries(this);
         mId = -1;
         if (savedInstanceState != null)
-            mId = savedInstanceState.getLong(ReminderEntry.Columns._ID);
+            mId = savedInstanceState.getLong(Columns._ID);
         else
-            mId = getIntent().getLongExtra(ReminderEntry.Columns._ID, -1);
+            mId = getIntent().getLongExtra(Columns._ID, -1);
 
         save.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent();
-                intent.putExtra(ReminderEntry.Columns._ID, mId);
+                intent.putExtra(Columns._ID, mId);
                 saveEntry();
                 setResult(RESULT_OK, intent);
                 finish();
@@ -137,7 +142,6 @@ public final class ReminderEdit extends Activity {
     protected void onResume() {
         super.onResume();
 
-        mEntries.open();
         populateFields();
     }
 
@@ -148,9 +152,9 @@ public final class ReminderEdit extends Activity {
         switch (requestCode) {
         case ACTIVITY_LOCATION:
             if (resultCode == RESULT_OK) {
-                mEntry.location = data.getStringExtra(ReminderEntry.Columns.LOCATION);
-                mEntry.addresses =
-                    ReminderEntry.deserializeAddresses(data.getByteArrayExtra(ReminderEntry.Columns.ADDRESSES));
+                final byte[] blob = data.getByteArrayExtra(Columns.ADDRESSES);
+                mEntry.location = data.getStringExtra(Columns.LOCATION);
+                mEntry.addresses = ReminderEntry.deserializeAddresses(blob);
                 updateLocationLabel();
             }
             break;
@@ -160,8 +164,13 @@ public final class ReminderEdit extends Activity {
     private void populateFields() {
         // TODO Check if there is any unsaved data, if so, load it from the
         // temporary table, otherwise wipe the slate clean.
-        if (mEntry == null && mId >= 0)
-            mEntry = mEntries.getEntry(mId);
+        if (mEntry == null && mId >= 0) {
+            final Uri uri = ContentUris.withAppendedId(ReminderProvider.CONTENT_URI,
+                                                       mId);
+            final Cursor cursor = managedQuery(uri, null, null, null, null);
+            if (cursor.moveToFirst())
+                mEntry = ReminderProvider.cursorToEntry(cursor);
+        }
 
         if (mEntry != null)
             mNote.setText(mEntry.note);
@@ -174,35 +183,34 @@ public final class ReminderEdit extends Activity {
     }
 
     @Override
-    protected void onPause() {
-        // TODO Dump unsaved data to a temporary table
-        super.onPause();
-
-        mEntries.close();
-    }
-
-    @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        outState.putLong(ReminderEntry.Columns._ID, mId);
+        outState.putLong(Columns._ID, mId);
     }
 
     private void setLocation() {
         Intent i = new Intent(this, EditLocation.class);
         if (mEntry.location != null)
-            i.putExtra(ReminderEntry.Columns.LOCATION, mEntry.location);
+            i.putExtra(Columns.LOCATION, mEntry.location);
         if (mEntry.addresses != null)
-            i.putExtra(ReminderEntry.Columns.ADDRESSES,
+            i.putExtra(Columns.ADDRESSES,
                        ReminderEntry.serializeAddresses(mEntry.addresses));
         startActivityForResult(i, ACTIVITY_LOCATION);
     }
 
     private void saveEntry() {
         mEntry.note = mNote.getText().toString();
-        if (mId >= 0)
-            mEntries.updateEntry(mEntry);
-        else
-            mEntries.createEntry(mEntry);
+        final ContentValues values = ReminderProvider.packEntryToValues(mEntry);
+        if (mId >= 0) {
+            Uri uri = ContentUris.withAppendedId(ReminderProvider.CONTENT_URI,
+                                                 mEntry.id);
+            if (getContentResolver().update(uri, values, null, null) != 1) {
+                if (Log.isLoggable(TAG, Log.DEBUG))
+                    Log.d(TAG, "failed to save entry " + mEntry.id);
+            }
+        } else {
+            getContentResolver().insert(ReminderProvider.CONTENT_URI, values);
+        }
     }
 
     private void updateLocationLabel() {

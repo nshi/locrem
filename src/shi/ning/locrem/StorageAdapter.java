@@ -1,20 +1,18 @@
 package shi.ning.locrem;
 
+import android.content.ContentValues;
 import android.content.Context;
-import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
 public abstract class StorageAdapter {
-    private static final String TAG = "Locrem";
+    private static final String TAG = "StorageAdapter";
     private static final String DATABASE_NAME = "locrem";
 
-    private DatabaseHelper mDbHelper;
-    protected SQLiteDatabase mDb;
-    private final Context mCtx;
+    protected final DatabaseHelper mDbHelper;
 
-    private static class DatabaseHelper extends SQLiteOpenHelper {
+    protected static class DatabaseHelper extends SQLiteOpenHelper {
         private final String mTable;
         private final String mCreate;
 
@@ -35,25 +33,19 @@ public abstract class StorageAdapter {
 
         @Override
         public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-            Log.w(TAG, "Upgrading database from version " + oldVersion + " to "
-                       + newVersion + ", which destroys all old data");
+            if (Log.isLoggable(TAG, Log.WARN))
+                Log.w(TAG, "Upgrading database from version " + oldVersion + " to "
+                      + newVersion + ", which destroys all old data");
             db.execSQL("DROP TABLE IF EXISTS " + mTable);
             onCreate(db);
         }
     }
 
-    public StorageAdapter(Context context) {
-        mCtx = context;
+    public StorageAdapter(Context context, int version, String table, String create) {
+        mDbHelper = new DatabaseHelper(context, version, table, create);
     }
 
-    protected StorageAdapter open(int version, String table, String create) throws SQLException {
-        mDbHelper = new DatabaseHelper(mCtx, version, table, create);
-        mDb = mDbHelper.getWritableDatabase();
-        mDb.setLockingEnabled(false);
-        return this;
-    }
-
-    public void close() {
-        mDbHelper.close();
-    }
+    public abstract long insert(ContentValues values);
+    public abstract int update(long id, ContentValues values);
+    public abstract int delete(long id);
 }
