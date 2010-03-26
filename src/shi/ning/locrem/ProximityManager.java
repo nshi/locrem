@@ -210,6 +210,9 @@ public final class ProximityManager extends Service {
     }
 
     private void checkEntry(ReminderEntry entry, Time now, Address current) {
+        if (entry == null || current == null)
+            return;
+
         if (entry.time.after(now)) {
             if (Log.isLoggable(TAG, Log.VERBOSE))
                 Log.v(TAG, "entry " + entry.id + " is scheduled to run after "
