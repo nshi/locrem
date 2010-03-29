@@ -6,7 +6,7 @@
     <ImageView android:id="@+id/toggle"
                android:src="@android:drawable/button_onoff_indicator_off"
                android:layout_width="40dip"
-               android:layout_height="51dip"
+               android:layout_height="57dip"
                android:layout_gravity="center"
                android:layout_marginLeft="7dip"
                android:layout_marginRight="7dip"
@@ -17,14 +17,17 @@
         <TextView android:id="@+id/list_note"
                   android:layout_width="fill_parent"
                   android:layout_height="wrap_content"
-                  android:layout_weight="2"
+                  android:layout_weight="1"
+                  android:gravity="center_vertical"
+                  android:textSize="15sp"
                   android:ellipsize="marquee"
-                  android:inputType="text" />
+                  android:singleLine="true" />
         <TextView android:layout_width="fill_parent"
                   android:layout_height="wrap_content"
                   android:layout_weight="1"
-                  android:textSize="11sp"
+                  android:gravity="center_vertical"
+                  android:textSize="12sp"
                   android:id="@+id/list_location"
-                  android:inputType="textPostalAddress" />
+                  android:singleLine="true" />
     </LinearLayout>
 </LinearLayout>
