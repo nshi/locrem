@@ -322,10 +322,6 @@ public final class ProximityManager extends Service {
         final String ns = Context.NOTIFICATION_SERVICE;
         final NotificationManager mNotificationManager =
             (NotificationManager) getSystemService(ns);
-        final int icon = android.R.drawable.alert_dark_frame;
-        final long when = System.currentTimeMillis();
-
-        final Notification notification = new Notification(icon, message, when);
 
         final Context context = getApplicationContext();
         final CharSequence contentTitle = "Location Alert";
@@ -333,7 +329,11 @@ public final class ProximityManager extends Service {
         final PendingIntent contentIntent =
             PendingIntent.getActivity(this, 0, notificationIntent, 0);
 
-        notification.defaults |= Notification.DEFAULT_SOUND;
+        final int icon = android.R.drawable.alert_dark_frame;
+        final long when = System.currentTimeMillis();
+        final Notification notification = new Notification(icon, message, when);
+        notification.defaults |= Notification.DEFAULT_ALL;
+        notification.flags |= Notification.FLAG_AUTO_CANCEL;
         notification.setLatestEventInfo(context, contentTitle,
                                         message, contentIntent);
         mNotificationManager.notify(1, notification);
