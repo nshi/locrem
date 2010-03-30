@@ -86,6 +86,7 @@ public final class EditLocation extends MapActivity {
 
         final InputMethodManager ime = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
         final EditText location = (EditText) findViewById(R.id.edit_location);
+        final Geocoder geo = new Geocoder(getApplicationContext());
         location.setOnEditorActionListener(new OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
@@ -93,9 +94,6 @@ public final class EditLocation extends MapActivity {
                     return false;
                 ime.hideSoftInputFromWindow(v.getWindowToken(), 0);
 
-                final Geocoder geo = new Geocoder(getApplicationContext());
-                mItemizedOverlay.clear();
-                mMapOverlays.clear();
                 try {
                     mAddresses = geo.getFromLocationName(v.getText().toString(), 1);
                 } catch (IOException e) {
@@ -110,11 +108,39 @@ public final class EditLocation extends MapActivity {
                     return true;
                 }
 
-                updateMap();
+                updateMap(true);
 
                 return true;
             }
         });
+
+        // Tap overlay
+        final Overlay tapOverlay = new Overlay() {
+            @Override
+            public boolean onTap(GeoPoint p, MapView mapView) {
+                try {
+                    mAddresses = geo.getFromLocation(p.getLatitudeE6() / 1E6,
+                                                     p.getLongitudeE6() / 1E6,
+                                                     1);
+                } catch (IOException e) {
+                    mapView.postInvalidate();
+                    showDialog(DIALOG_NETWORK_UNAVAILABLE);
+                    return true;
+                }
+
+                if (mAddresses == null || mAddresses.size() == 0) {
+                    mapView.postInvalidate();
+                    showDialog(DIALOG_NOT_FOUND);
+                    return true;
+                }
+
+                updateMap(false);
+                updateAddress(location);
+
+                return true;
+            }
+        };
+        mMapOverlays.add(tapOverlay);
 
         final Button save = (Button) findViewById(R.id.save_location);
         save.setOnClickListener(new OnClickListener() {
@@ -141,7 +167,7 @@ public final class EditLocation extends MapActivity {
         if (buffer != null) {
             mAddresses = ReminderEntry.deserializeAddresses(buffer);
             if (mAddresses != null)
-                updateMap();
+                updateMap(true);
         }
     }
 
@@ -172,7 +198,26 @@ public final class EditLocation extends MapActivity {
         return false;
     }
 
-    private void updateMap() {
+    private void updateAddress(EditText location) {
+        if (mAddresses.isEmpty())
+            return;
+
+        final Address address = mAddresses.get(0);
+        final int len = mAddresses.get(0).getMaxAddressLineIndex();
+        if (len == -1)
+            return;
+
+        final StringBuilder addressLine =
+            new StringBuilder(address.getAddressLine(0));
+        for (int i = 1; i < len; i++) {
+            addressLine.append(", ");
+            addressLine.append(address.getAddressLine(i));
+        }
+        location.setText(addressLine);
+    }
+
+    private void updateMap(boolean zoom) {
+        mItemizedOverlay.clear();
         for (Address a : mAddresses) {
             final GeoPoint point = new GeoPoint((int) (a.getLatitude() * 1E6),
                                                 (int) (a.getLongitude() * 1E6));
@@ -180,7 +225,8 @@ public final class EditLocation extends MapActivity {
             mItemizedOverlay.addItem(item);
         }
         mMapOverlays.add(mItemizedOverlay);
-        mMapController.setCenter(mItemizedOverlay.getCenter());
-        mMapController.setZoom(16);
+        mMapController.animateTo(mItemizedOverlay.getCenter());
+        if (zoom)
+            mMapController.setZoom(16);
     }
 }
