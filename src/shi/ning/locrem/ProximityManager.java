@@ -38,10 +38,7 @@ public final class ProximityManager extends Service {
     private final static int MIN_DISTANCE = 200; // 200 meters
     private final static int RANGE = 500; // 500 meters
 
-    private final static Criteria mCriteria = new Criteria();
-    static {
-        mCriteria.setAccuracy(Criteria.ACCURACY_COARSE);
-    }
+    private String mProvider;
 
     private final Stub mBinder = new Stub() {
         @Override
@@ -122,7 +119,7 @@ public final class ProximityManager extends Service {
             if (id >= 0) {
                 if (Log.isLoggable(TAG, Log.VERBOSE))
                     Log.v(TAG, "previously scheduled entry " + id
-                          + " is waken");
+                          + " is woken");
 
                 onEntryChanged(id);
             }
@@ -159,16 +156,18 @@ public final class ProximityManager extends Service {
     }
 
     private void register() {
-        final String provider = mManager.getBestProvider(mCriteria, true);
+        final Criteria criteria = new Criteria();
+        criteria.setAccuracy(Criteria.ACCURACY_COARSE);
+        mProvider = mManager.getBestProvider(criteria, true);
         /*
          * TODO Should ask user if they want to enable location service
          * if no provider is available.
          */
-        if (provider != null) {
-            mManager.requestLocationUpdates(provider, MIN_TIME, MIN_DISTANCE,
+        if (mProvider != null) {
+            mManager.requestLocationUpdates(mProvider, MIN_TIME, MIN_DISTANCE,
                                             mListener);
             if (Log.isLoggable(TAG, Log.VERBOSE))
-                Log.v(TAG, "registered to location provider " + provider);
+                Log.v(TAG, "registered to location provider " + mProvider);
         } else {
             if (Log.isLoggable(TAG, Log.DEBUG))
                 Log.d(TAG, "no location provider available");
@@ -186,9 +185,18 @@ public final class ProximityManager extends Service {
             cursor.close();
             final Time now = new Time();
             now.setToNow();
-            final String provider = mManager.getBestProvider(mCriteria, true);
+
+            if (!entry.enabled)
+                return;
+
+            if (mProvider == null) {
+                if (Log.isLoggable(TAG, Log.DEBUG))
+                    Log.d(TAG, "no location provider is available");
+                return;
+            }
+
             final Address current =
-                locationToAddress(mManager.getLastKnownLocation(provider));
+                locationToAddress(mManager.getLastKnownLocation(mProvider));
             checkEntry(entry, now, current);
         }
     }
@@ -210,7 +218,7 @@ public final class ProximityManager extends Service {
     }
 
     private void checkEntry(ReminderEntry entry, Time now, Address current) {
-        if (entry == null || current == null)
+        if (entry == null)
             return;
 
         if (entry.time.after(now)) {
@@ -231,6 +239,9 @@ public final class ProximityManager extends Service {
 
             return;
         }
+
+        if (current == null)
+            return;
 
         for (Address a : entry.addresses) {
             if (inRange(current, a)) {
