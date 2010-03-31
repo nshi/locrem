@@ -11,6 +11,7 @@ import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
 import android.location.Address;
 import android.location.Geocoder;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.KeyEvent;
 import android.view.View;
@@ -31,11 +32,15 @@ import com.google.android.maps.Overlay;
 import com.google.android.maps.OverlayItem;
 
 public final class EditLocation extends MapActivity {
+    private static final int DIALOG_NONE = -1;
     private static final int DIALOG_NETWORK_UNAVAILABLE = 0;
     private static final int DIALOG_NOT_FOUND = 1;
 
+    private Geocoder mGeo;
+    private MapView mMapView;
     private MapController mMapController;
     private List<Overlay> mMapOverlays;
+    private EditText mLocation;
     private LocationOverlay mItemizedOverlay;
     private AlertDialog.Builder mAlertBuilder;
     private List<Address> mAddresses;
@@ -69,47 +74,77 @@ public final class EditLocation extends MapActivity {
         }
     }
 
+    private final class GeocodeTask extends AsyncTask<Object, Void, Integer> {
+        @Override
+        protected Integer doInBackground(Object... params) {
+            final boolean isAddress = (Boolean) params[0];
+
+            synchronized (mAddresses) {
+                try {
+                    if (isAddress)
+                        mAddresses = mGeo.getFromLocationName((String) params[1],
+                                                              1);
+                    else
+                        mAddresses = mGeo.getFromLocation((Double) params[1],
+                                                          (Double) params[2],
+                                                          1);
+                } catch (IOException e) {
+                    return DIALOG_NETWORK_UNAVAILABLE;
+                }
+
+                if (mAddresses == null || mAddresses.size() == 0) {
+                    return DIALOG_NOT_FOUND;
+                }
+            }
+
+            if (!isAddress)
+                publishProgress((Void) null);
+
+            return DIALOG_NONE;
+        }
+
+        @Override
+        protected void onProgressUpdate(Void... values) {
+            updateAddress(mLocation);
+        }
+
+        @Override
+        protected void onPostExecute(Integer result) {
+            switch (result) {
+            case DIALOG_NONE:
+                updateMap(true);
+                break;
+            default:
+                showDialog(result);
+            }
+        }
+    }
+
     @Override
     protected void onCreate(Bundle state) {
         super.onCreate(state);
         setContentView(R.layout.map);
 
-        final MapView mapView = (MapView) findViewById(R.id.mapview);
-        mapView.setBuiltInZoomControls(true);
+        mMapView = (MapView) findViewById(R.id.mapview);
+        mMapView.setBuiltInZoomControls(true);
 
-        mMapController = mapView.getController();
-        mMapOverlays = mapView.getOverlays();
+        mMapController = mMapView.getController();
+        mMapOverlays = mMapView.getOverlays();
         final Drawable marker = getResources().getDrawable(android.R.drawable.ic_dialog_alert);
         mItemizedOverlay = new LocationOverlay(marker);
 
         mAlertBuilder = new AlertDialog.Builder(this);
 
         final InputMethodManager ime = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
-        final EditText location = (EditText) findViewById(R.id.edit_location);
-        final Geocoder geo = new Geocoder(getApplicationContext());
-        location.setOnEditorActionListener(new OnEditorActionListener() {
+        mLocation = (EditText) findViewById(R.id.edit_location);
+        mGeo = new Geocoder(getApplicationContext());
+        mLocation.setOnEditorActionListener(new OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
                 if (actionId != EditorInfo.IME_ACTION_SEARCH)
                     return false;
                 ime.hideSoftInputFromWindow(v.getWindowToken(), 0);
-
-                try {
-                    mAddresses = geo.getFromLocationName(v.getText().toString(), 1);
-                } catch (IOException e) {
-                    mapView.postInvalidate();
-                    showDialog(DIALOG_NETWORK_UNAVAILABLE);
-                    return true;
-                }
-
-                if (mAddresses == null || mAddresses.size() == 0) {
-                    mapView.postInvalidate();
-                    showDialog(DIALOG_NOT_FOUND);
-                    return true;
-                }
-
-                updateMap(true);
-
+                new GeocodeTask().execute(true, v.getText().toString());
                 return true;
             }
         });
@@ -118,25 +153,8 @@ public final class EditLocation extends MapActivity {
         final Overlay tapOverlay = new Overlay() {
             @Override
             public boolean onTap(GeoPoint p, MapView mapView) {
-                try {
-                    mAddresses = geo.getFromLocation(p.getLatitudeE6() / 1E6,
-                                                     p.getLongitudeE6() / 1E6,
-                                                     1);
-                } catch (IOException e) {
-                    mapView.postInvalidate();
-                    showDialog(DIALOG_NETWORK_UNAVAILABLE);
-                    return true;
-                }
-
-                if (mAddresses == null || mAddresses.size() == 0) {
-                    mapView.postInvalidate();
-                    showDialog(DIALOG_NOT_FOUND);
-                    return true;
-                }
-
-                updateMap(false);
-                updateAddress(location);
-
+                new GeocodeTask().execute(false, p.getLatitudeE6() / 1E6,
+                                          p.getLongitudeE6() / 1E6);
                 return true;
             }
         };
@@ -148,9 +166,11 @@ public final class EditLocation extends MapActivity {
             public void onClick(View v) {
                 Intent intent = new Intent();
                 intent.putExtra(ReminderEntry.Columns.LOCATION,
-                                location.getText().toString());
-                intent.putExtra(ReminderEntry.Columns.ADDRESSES,
-                                ReminderEntry.serializeAddresses(mAddresses));
+                                mLocation.getText().toString());
+                synchronized (mAddresses) {
+                    intent.putExtra(ReminderEntry.Columns.ADDRESSES,
+                                    ReminderEntry.serializeAddresses(mAddresses));
+                }
                 setResult(RESULT_OK, intent);
                 finish();
             }
@@ -162,7 +182,7 @@ public final class EditLocation extends MapActivity {
 
         final String locationString = extras.getString(ReminderEntry.Columns.LOCATION);
         if (locationString != null)
-            location.setText(locationString);
+            mLocation.setText(locationString);
         final byte[] buffer = extras.getByteArray(ReminderEntry.Columns.ADDRESSES);
         if (buffer != null) {
             mAddresses = ReminderEntry.deserializeAddresses(buffer);
