@@ -38,6 +38,11 @@ public final class ProximityManager extends Service {
     private final static int MIN_DISTANCE = 200; // 200 meters
     private final static int RANGE = 500; // 500 meters
 
+    private static final String PRIMARY_PROVIDER =
+        LocationManager.NETWORK_PROVIDER;
+    private static final String SECONDARY_PROVIDER =
+        LocationManager.GPS_PROVIDER;
+
     private String mProvider;
 
     private final Stub mBinder = new Stub() {
@@ -74,7 +79,7 @@ public final class ProximityManager extends Service {
         public void onProviderEnabled(String provider) {
             if (Log.isLoggable(TAG, Log.DEBUG))
                 Log.d(TAG, "provider " + provider + " enabled");
-            if (provider.equals(LocationManager.GPS_PROVIDER)
+            if (provider.equals(PRIMARY_PROVIDER)
                 && !mProvider.equals(provider)) {
                 unregister(mProvider);
                 mProvider = provider;
@@ -85,9 +90,9 @@ public final class ProximityManager extends Service {
         public void onProviderDisabled(String provider) {
             if (Log.isLoggable(TAG, Log.DEBUG))
                 Log.d(TAG, provider + " disabled");
-            if (provider.equals(LocationManager.GPS_PROVIDER)
-                && !mProvider.equals(LocationManager.NETWORK_PROVIDER)) {
-                mProvider = LocationManager.NETWORK_PROVIDER;
+            if (provider.equals(PRIMARY_PROVIDER)
+                && !mProvider.equals(SECONDARY_PROVIDER)) {
+                mProvider = SECONDARY_PROVIDER;
                 register(mProvider);
             }
         }
@@ -111,7 +116,7 @@ public final class ProximityManager extends Service {
         mGeocoder = new Geocoder(mContext);
         mListener = new ProximityListener();
         mSecondaryListener = new ProximityListener();
-        mProvider = LocationManager.GPS_PROVIDER;
+        mProvider = PRIMARY_PROVIDER;
         register(mProvider);
         if (Log.isLoggable(TAG, Log.VERBOSE))
             Log.v(TAG, "created");
@@ -167,7 +172,7 @@ public final class ProximityManager extends Service {
     }
 
     private void unregister(final String provider) {
-        if (provider.equals(LocationManager.GPS_PROVIDER))
+        if (provider.equals(PRIMARY_PROVIDER))
             mManager.removeUpdates(mListener);
         else
             mManager.removeUpdates(mSecondaryListener);
@@ -182,7 +187,7 @@ public final class ProximityManager extends Service {
          * if no provider is available.
          */
         if (provider != null) {
-            if (provider.equals(LocationManager.GPS_PROVIDER))
+            if (provider.equals(PRIMARY_PROVIDER))
                 mManager.requestLocationUpdates(provider,
                                                 MIN_TIME,
                                                 MIN_DISTANCE,
