@@ -130,17 +130,20 @@ public final class EditLocation extends MapActivity {
 
         mMapController = mMapView.getController();
         mMapOverlays = mMapView.getOverlays();
-        final Drawable marker = getResources().getDrawable(android.R.drawable.ic_dialog_alert);
+        final Drawable marker =
+            getResources().getDrawable(R.drawable.red_circle);
         mItemizedOverlay = new LocationOverlay(marker);
 
         mAlertBuilder = new AlertDialog.Builder(this);
 
-        final InputMethodManager ime = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+        final InputMethodManager ime =
+            (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
         mLocation = (EditText) findViewById(R.id.edit_location);
         mGeo = new Geocoder(getApplicationContext());
         mLocation.setOnEditorActionListener(new OnEditorActionListener() {
             @Override
-            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+            public boolean onEditorAction(TextView v, int actionId,
+                                          KeyEvent event) {
                 if (actionId != EditorInfo.IME_ACTION_SEARCH)
                     return false;
                 ime.hideSoftInputFromWindow(v.getWindowToken(), 0);
@@ -180,10 +183,12 @@ public final class EditLocation extends MapActivity {
         if (extras == null)
             extras = getIntent().getExtras();
 
-        final String locationString = extras.getString(ReminderEntry.Columns.LOCATION);
+        final String locationString =
+            extras.getString(ReminderEntry.Columns.LOCATION);
         if (locationString != null)
             mLocation.setText(locationString);
-        final byte[] buffer = extras.getByteArray(ReminderEntry.Columns.ADDRESSES);
+        final byte[] buffer =
+            extras.getByteArray(ReminderEntry.Columns.ADDRESSES);
         if (buffer != null) {
             mAddresses = ReminderEntry.deserializeAddresses(buffer);
             if (mAddresses != null)
