@@ -17,11 +17,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.location.Address;
-import android.location.Criteria;
 import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.location.LocationProvider;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -54,29 +54,42 @@ public final class ProximityManager extends Service {
     private Geocoder mGeocoder;
     private LocationManager mManager;
     private ProximityListener mListener;
+    private ProximityListener mSecondaryListener;
 
     private final class ProximityListener implements LocationListener {
         @Override
         public void onStatusChanged(String provider, int status,
                                     Bundle extras) {
-            // XXX I'm not sure if I care about this
             if (Log.isLoggable(TAG, Log.DEBUG))
-                Log.d(TAG, "provider " + provider + " status changed to "
+                Log.w(TAG, "provider " + provider + " status changed to "
                       + status);
+
+            if (status == LocationProvider.AVAILABLE)
+                onProviderEnabled(provider);
+            else if (status == LocationProvider.OUT_OF_SERVICE)
+                onProviderDisabled(provider);
         }
 
         @Override
         public void onProviderEnabled(String provider) {
             if (Log.isLoggable(TAG, Log.DEBUG))
                 Log.d(TAG, "provider " + provider + " enabled");
+            if (provider.equals(LocationManager.GPS_PROVIDER)
+                && !mProvider.equals(provider)) {
+                unregister(mProvider);
+                mProvider = provider;
+            }
         }
 
         @Override
         public void onProviderDisabled(String provider) {
             if (Log.isLoggable(TAG, Log.DEBUG))
                 Log.d(TAG, provider + " disabled");
-            unregister();
-            register();
+            if (provider.equals(LocationManager.GPS_PROVIDER)
+                && !mProvider.equals(LocationManager.NETWORK_PROVIDER)) {
+                mProvider = LocationManager.NETWORK_PROVIDER;
+                register(mProvider);
+            }
         }
 
         @Override
@@ -97,7 +110,9 @@ public final class ProximityManager extends Service {
             (LocationManager) mContext.getSystemService(Context.LOCATION_SERVICE);
         mGeocoder = new Geocoder(mContext);
         mListener = new ProximityListener();
-        register();
+        mSecondaryListener = new ProximityListener();
+        mProvider = LocationManager.GPS_PROVIDER;
+        register(mProvider);
         if (Log.isLoggable(TAG, Log.VERBOSE))
             Log.v(TAG, "created");
     }
@@ -151,23 +166,34 @@ public final class ProximityManager extends Service {
         }
     }
 
-    private void unregister() {
-        mManager.removeUpdates(mListener);
+    private void unregister(final String provider) {
+        if (provider.equals(LocationManager.GPS_PROVIDER))
+            mManager.removeUpdates(mListener);
+        else
+            mManager.removeUpdates(mSecondaryListener);
+
+        if (Log.isLoggable(TAG, Log.VERBOSE))
+            Log.v(TAG, provider + " unregistered");
     }
 
-    private void register() {
-        final Criteria criteria = new Criteria();
-        criteria.setAccuracy(Criteria.ACCURACY_COARSE);
-        mProvider = mManager.getBestProvider(criteria, true);
+    private void register(final String provider) {
         /*
          * TODO Should ask user if they want to enable location service
          * if no provider is available.
          */
-        if (mProvider != null) {
-            mManager.requestLocationUpdates(mProvider, MIN_TIME, MIN_DISTANCE,
-                                            mListener);
+        if (provider != null) {
+            if (provider.equals(LocationManager.GPS_PROVIDER))
+                mManager.requestLocationUpdates(provider,
+                                                MIN_TIME,
+                                                MIN_DISTANCE,
+                                                mListener);
+            else
+                mManager.requestLocationUpdates(provider,
+                                                MIN_TIME,
+                                                MIN_DISTANCE,
+                                                mSecondaryListener);
             if (Log.isLoggable(TAG, Log.VERBOSE))
-                Log.v(TAG, "registered to location provider " + mProvider);
+                Log.v(TAG, "registered to location provider " + provider);
         } else {
             if (Log.isLoggable(TAG, Log.DEBUG))
                 Log.d(TAG, "no location provider available");
