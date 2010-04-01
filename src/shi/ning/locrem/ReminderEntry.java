@@ -57,6 +57,7 @@ public final class ReminderEntry implements Serializable {
         long time = in.getLong(Columns.TIME_INDEX);
         this.time = new Time();
         this.time.setToNow();
+        this.time.second = 0;
         if (time > 0) {
             this.time.set(time);
         }
