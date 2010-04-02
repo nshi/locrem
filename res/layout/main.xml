@@ -10,19 +10,14 @@
                   android:layout_width="fill_parent"
                   android:layout_height="wrap_content"
                   android:orientation="horizontal">
-        <ImageView android:layout_width="wrap_content"
-                   android:layout_height="wrap_content"
-                   android:layout_marginLeft="11dip"
-                   android:layout_marginTop="10dip"
-                   android:layout_marginRight="11dip"
-                   android:layout_marginBottom="10dip"
-                   android:duplicateParentState="true"
-                   android:gravity="center"
-                   android:scaleType="center"
-                   android:src="@android:drawable/ic_input_add" />
         <TextView android:layout_height="wrap_content"
                   android:layout_width="wrap_content"
-                  android:layout_gravity="center_vertical"
+                  android:drawableLeft="@android:drawable/ic_input_add"
+                  android:drawablePadding="11dip"
+                  android:layout_marginLeft="11dip"
+                  android:layout_marginTop="10dip"
+                  android:layout_marginBottom="10dip"
+                  android:gravity="center_vertical"
                   android:textColor="?android:attr/textColorPrimary"
                   android:text="@string/add_entry" />
     </LinearLayout>
@@ -33,7 +28,7 @@
                android:src="@android:drawable/divider_horizontal_dark" />
 
     <ListView android:layout_width="fill_parent"
-              android:layout_height="wrap_content"
+              android:layout_height="0dip"
               android:layout_weight="1"
               android:id="@android:id/list" />
 </LinearLayout>
