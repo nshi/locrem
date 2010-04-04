@@ -1,32 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:layout_width="fill_parent"
               android:layout_height="fill_parent"
               android:orientation="vertical">
-    <LinearLayout android:layout_width="fill_parent"
-                  android:layout_height="wrap_content"
-                  android:orientation="horizontal">
-        <EditText android:id="@+id/edit_location"
-                  android:layout_width="0dip"
-                  android:layout_height="wrap_content"
-                  android:layout_weight="1"
-                  android:hint="@string/address"
-                  android:inputType="textPostalAddress"
-                  android:imeOptions="actionSearch" />
-        <Button android:id="@+id/save_location"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="fill_horizontal"
-                android:text="@string/save" />
-    </LinearLayout>
-    <RelativeLayout android:id="@+id/map_layout"
-                    android:orientation="vertical"
-                    android:layout_width="fill_parent"
-                    android:layout_height="fill_parent" >
-        <com.google.android.maps.MapView android:id="@+id/mapview"
-                                         android:layout_width="fill_parent"
-                                         android:layout_height="fill_parent"
-                                         android:clickable="true"
-                                         android:apiKey="0tUWYmm1p6jrF9QbwZlEdVO1Uu22jmO5ePnq4Aw" />
-    </RelativeLayout>
-</LinearLayout>
+    <Button android:id="@+id/save_location"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentTop="true"
+            android:text="@string/save" />
+    <EditText android:id="@+id/edit_location"
+              android:layout_width="fill_parent"
+              android:layout_height="wrap_content"
+              android:layout_alignParentTop="true"
+              android:layout_alignParentLeft="true"
+              android:layout_toLeftOf="@id/save_location"
+              android:hint="@string/address"
+              android:inputType="textPostalAddress"
+              android:imeOptions="actionSearch" />
+    <com.google.android.maps.MapView android:id="@+id/mapview"
+                                     android:layout_width="fill_parent"
+                                     android:layout_height="fill_parent"
+                                     android:layout_alignParentBottom="true"
+                                     android:layout_alignParentLeft="true"
+                                     android:layout_alignParentRight="true"
+                                     android:layout_below="@id/edit_location"
+                                     android:clickable="true"
+                                     android:apiKey="0tUWYmm1p6jrF9QbwZlEdVO1Uu22jmO5ePnq4Aw" />
+</RelativeLayout>

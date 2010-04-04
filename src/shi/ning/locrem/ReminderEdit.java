@@ -62,8 +62,8 @@ public final class ReminderEdit extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.edit);
 
-        View setLocation = findViewById(R.id.set_location);
-        setLocation.setOnClickListener(new View.OnClickListener() {
+        mLocationLabel = (TextView) findViewById(R.id.set_location);
+        mLocationLabel.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 setLocation();
@@ -86,7 +86,6 @@ public final class ReminderEdit extends Activity {
             }
         });
 
-        mLocationLabel = (TextView) findViewById(R.id.location_label);
         mNote = (EditText) findViewById(R.id.note);
 
         final Button save = (Button) findViewById(R.id.save);

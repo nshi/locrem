@@ -1,29 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              android:orientation="vertical" android:layout_width="fill_parent"
+              android:orientation="vertical"
+              android:layout_width="fill_parent"
               android:layout_height="fill_parent">
-
-    <LinearLayout android:id="@+id/set_location"
-                  android:clickable="true"
-                  android:focusable="true"
-                  android:background="@android:drawable/list_selector_background"
-                  android:layout_width="fill_parent"
-                  android:layout_height="wrap_content"
-                  android:orientation="horizontal">
-        <TextView android:id="@+id/location_label"
-                  android:layout_height="wrap_content"
-                  android:layout_width="fill_parent"
-                  android:layout_gravity="center_vertical"
-                  android:drawablePadding="11dip"
-                  android:layout_marginLeft="11dip"
-                  android:layout_marginTop="7dip"
-                  android:layout_marginBottom="7dip"
-                  android:drawableLeft="@android:drawable/ic_dialog_map"
-                  android:gravity="center"
-                  android:textColor="?android:attr/textColorPrimary"
-                  android:hint="@string/location" />
-    </LinearLayout>
+    <TextView android:id="@+id/set_location"
+              android:layout_height="wrap_content"
+              android:layout_width="fill_parent"
+              android:padding="7dip"
+              android:clickable="true"
+              android:focusable="true"
+              android:background="@android:drawable/list_selector_background"
+              android:drawableLeft="@android:drawable/ic_dialog_map"
+              android:gravity="center"
+              android:textColor="?android:attr/textColorPrimary"
+              android:hint="@string/location" />
     <ImageView android:layout_width="fill_parent"
                android:layout_height="wrap_content"
                android:scaleType="fitXY"

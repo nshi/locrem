@@ -16,6 +16,7 @@ import android.util.Log;
 import android.view.ContextMenu;
 import android.view.LayoutInflater;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -112,9 +113,6 @@ public final class ReminderList extends ListActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        if (Log.isLoggable(TAG, Log.DEBUG))
-            Log.d(TAG, "created");
-
         mLayoutFactory = LayoutInflater.from(this);
 
         setContentView(R.layout.main);
@@ -127,6 +125,27 @@ public final class ReminderList extends ListActivity {
                 createEntry();
             }
         });
+
+        if (Log.isLoggable(TAG, Log.DEBUG))
+            Log.d(TAG, "created");
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+        case R.id.menu_settings:
+            startActivity(new Intent(this, Settings.class));
+            return true;
+        }
+
+        return false;
     }
 
     @Override

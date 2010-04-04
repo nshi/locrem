@@ -15,6 +15,8 @@ import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.database.Cursor;
 import android.location.Address;
 import android.location.Geocoder;
@@ -26,6 +28,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.RemoteException;
+import android.preference.PreferenceManager;
 import android.text.format.Time;
 import android.util.Log;
 
@@ -36,14 +39,11 @@ public final class ProximityManager extends Service {
 
     private final static int MIN_TIME = 300000; // 5 minutes
     private final static int MIN_DISTANCE = 200; // 200 meters
-    private final static int RANGE = 500; // 500 meters
 
     private static final String PRIMARY_PROVIDER =
         LocationManager.NETWORK_PROVIDER;
     private static final String SECONDARY_PROVIDER =
         LocationManager.GPS_PROVIDER;
-
-    private String mProvider;
 
     private final Stub mBinder = new Stub() {
         @Override
@@ -55,11 +55,13 @@ public final class ProximityManager extends Service {
         }
     };
 
+    private String mProvider;
     private Context mContext;
     private Geocoder mGeocoder;
     private LocationManager mManager;
     private ProximityListener mListener;
     private ProximityListener mSecondaryListener;
+    private int mRange;
 
     private final class ProximityListener implements LocationListener {
         @Override
@@ -116,6 +118,21 @@ public final class ProximityManager extends Service {
         mGeocoder = new Geocoder(mContext);
         mListener = new ProximityListener();
         mSecondaryListener = new ProximityListener();
+
+        final SharedPreferences settings =
+            PreferenceManager.getDefaultSharedPreferences(mContext);
+        settings.registerOnSharedPreferenceChangeListener(new OnSharedPreferenceChangeListener() {
+            @Override
+            public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+                mRange = settings.getInt(key, Settings.DEFAULT_RANGE);
+                if (Log.isLoggable(TAG, Log.DEBUG))
+                    Log.d(TAG, key + " value changed to " + mRange);
+            }
+        });
+        mRange = settings.getInt(Settings.KEY_RANGE, Settings.DEFAULT_RANGE);
+        if (Log.isLoggable(TAG, Log.VERBOSE))
+            Log.v(TAG, "range settings is " + mRange);
+
         mProvider = PRIMARY_PROVIDER;
         register(mProvider);
         if (Log.isLoggable(TAG, Log.VERBOSE))
@@ -323,7 +340,8 @@ public final class ProximityManager extends Service {
                                          test.getLatitude(),
                                          test.getLongitude(),
                                          distance);
-                if (distance[0] <= RANGE) {
+
+                if (distance[0] <= mRange) {
                     if (Log.isLoggable(TAG, Log.VERBOSE))
                         Log.v(TAG, "coordinates close to " + test.toString());
                     return true;

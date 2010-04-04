@@ -15,6 +15,7 @@
         </activity>
         <activity android:name=".ReminderEdit" />
         <activity android:name=".EditLocation" />
+        <activity android:name=".Settings" />
 
         <uses-library android:name="com.google.android.maps" />
         <service android:name=".ProximityManager" />
