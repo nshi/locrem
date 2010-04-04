@@ -19,7 +19,7 @@ public final class Settings extends Activity {
 
     public static final String KEY_RANGE = "range";
 
-    public static final int DEFAULT_RANGE = 300;
+    public static final int DEFAULT_RANGE = 500;
 
     private SharedPreferences mSettings;
     private SeekBar mRangeBar;
