@@ -41,21 +41,22 @@ import com.google.android.maps.Overlay;
 import com.google.android.maps.OverlayItem;
 
 public final class EditLocation extends MapActivity {
-    private static final String TAG = "EditLocation";
+    static final String TAG = "EditLocation";
     private static final int DIALOG_NONE = -1;
     private static final int DIALOG_NETWORK_UNAVAILABLE = 0;
     private static final int DIALOG_NOT_FOUND = 1;
 
-    private Geocoder mGeo;
+    Geocoder mGeo;
     private MapView mMapView;
     private MapController mMapController;
     private List<Overlay> mMapOverlays;
-    private AutoCompleteTextView mLocation;
+    AutoCompleteTextView mLocation;
     private LocationOverlay mItemizedOverlay;
     private AlertDialog.Builder mAlertBuilder;
-    private List<Address> mAddresses;
+    List<Address> mAddresses;
 
-    private final class LocationOverlay extends ItemizedOverlay<OverlayItem> {
+    private static final class LocationOverlay
+    extends ItemizedOverlay<OverlayItem> {
         private final ArrayList<OverlayItem> mItems;
 
         public LocationOverlay(Drawable defaultMarker) {
@@ -110,12 +111,6 @@ public final class EditLocation extends MapActivity {
             if (!isAddress)
                 publishProgress((Void) null);
 
-            // Save address in recent
-            final ContentValues values = new ContentValues();
-            values.put(ReminderProvider.RecentColumns.ADDRESS,
-                       mLocation.getText().toString());
-            getContentResolver().insert(ReminderProvider.RECENT_URI, values);
-
             return DIALOG_NONE;
         }
 
@@ -128,6 +123,12 @@ public final class EditLocation extends MapActivity {
         protected void onPostExecute(Integer result) {
             switch (result) {
             case DIALOG_NONE:
+                // Save address in recent
+                final ContentValues values = new ContentValues();
+                values.put(ReminderProvider.RecentColumns.ADDRESS,
+                           mLocation.getText().toString());
+                getContentResolver().insert(ReminderProvider.RECENT_URI, values);
+
                 updateMap(true);
                 break;
             default:
@@ -287,7 +288,7 @@ public final class EditLocation extends MapActivity {
         return false;
     }
 
-    private void updateAddress(EditText location) {
+    void updateAddress(EditText location) {
         if (mAddresses.isEmpty())
             return;
 
@@ -305,9 +306,11 @@ public final class EditLocation extends MapActivity {
         location.setText(addressLine);
     }
 
-    private void updateMap(boolean zoom) {
+    void updateMap(boolean zoom) {
         mItemizedOverlay.clear();
-        for (Address a : mAddresses) {
+        final int length = mAddresses.size();
+        for (int i = 0; i < length; i++) {
+            final Address a = mAddresses.get(i);
             final GeoPoint point = new GeoPoint((int) (a.getLatitude() * 1E6),
                                                 (int) (a.getLongitude() * 1E6));
             final OverlayItem item = new OverlayItem(point, "", "");
