@@ -2,7 +2,6 @@ package shi.ning.locrem;
 
 import java.util.LinkedList;
 
-import shi.ning.locrem.ReminderEntry.Columns;
 import android.content.ContentProvider;
 import android.content.ContentUris;
 import android.content.ContentValues;
@@ -11,7 +10,9 @@ import android.content.UriMatcher;
 import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteOpenHelper;
 import android.net.Uri;
+import android.provider.BaseColumns;
 import android.text.format.Time;
 import android.util.Log;
 
@@ -22,34 +23,51 @@ public final class ReminderProvider extends ContentProvider {
     private static final int ENTRIES_ENABLED = 2;
     private static final int ENTRIES_DISABLED = 3;
     private static final int ENTRIES_ID = 4;
+    private static final int RECENT = 5;
     private static final UriMatcher mUriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
 
     static {
-        mUriMatcher.addURI(AUTHORITY, ReminderEntries.DATABASE_TABLE, ENTRIES);
-        mUriMatcher.addURI(AUTHORITY, ReminderEntries.DATABASE_TABLE + "/enabled",
+        mUriMatcher.addURI(AUTHORITY, Database.ENTRIES_TABLE, ENTRIES);
+        mUriMatcher.addURI(AUTHORITY, Database.ENTRIES_TABLE + "/enabled",
                            ENTRIES_ENABLED);
-        mUriMatcher.addURI(AUTHORITY, ReminderEntries.DATABASE_TABLE + "/disabled",
+        mUriMatcher.addURI(AUTHORITY, Database.ENTRIES_TABLE + "/disabled",
                            ENTRIES_DISABLED);
-        mUriMatcher.addURI(AUTHORITY, ReminderEntries.DATABASE_TABLE + "/#",
+        mUriMatcher.addURI(AUTHORITY, Database.ENTRIES_TABLE + "/#",
                            ENTRIES_ID);
+        mUriMatcher.addURI(AUTHORITY, Database.RECENT_TABLE, RECENT);
     }
 
     public static final Uri CONTENT_URI =
-        Uri.parse("content://" + AUTHORITY + "/" + ReminderEntries.DATABASE_TABLE);
+        Uri.parse("content://" + AUTHORITY + "/" + Database.ENTRIES_TABLE);
     public static final Uri ENABLED_URI =
-        Uri.parse("content://" + AUTHORITY + "/" + ReminderEntries.DATABASE_TABLE
+        Uri.parse("content://" + AUTHORITY + "/" + Database.ENTRIES_TABLE
                   + "/enabled");
     public static final Uri DISABLED_URI =
-        Uri.parse("content://" + AUTHORITY + "/" + ReminderEntries.DATABASE_TABLE
+        Uri.parse("content://" + AUTHORITY + "/" + Database.ENTRIES_TABLE
                   + "/disabled");
+    public static final Uri RECENT_URI =
+        Uri.parse("content://" + AUTHORITY + "/" + Database.RECENT_TABLE);
 
-    private ReminderEntries mEntries;
+    private Database mDb;
 
-    public final class ReminderEntries extends StorageAdapter {
+    public static final class RecentColumns implements BaseColumns {
+        public static final String ADDRESS = "address";
+
+        public static final String[] QUERY_COLUMNS = {_ID,
+                                                      ADDRESS};
+
+        // Have to be in sync with QUERY_COLUMNS
+        public static final int ID_INDEX = 0;
+        public static final int ADDRESS_INDEX = 1;
+    }
+
+    private static final class Database {
+        private static final String DATABASE_NAME = "locrem";
         private static final int DATABASE_VERSION = 1;
-        private static final String DATABASE_TABLE = "entries";
-        private static final String DATABASE_CREATE =
-            "CREATE TABLE " + DATABASE_TABLE
+
+        private static final String ENTRIES_TABLE = "entries";
+        private static final String ENTRIES_CREATE =
+            "CREATE TABLE " + ENTRIES_TABLE
             + " (_id INTEGER PRIMARY KEY,"
             + " time INTEGER,"
             + " last INTEGER,"
@@ -58,53 +76,95 @@ public final class ReminderProvider extends ContentProvider {
             + " note text NOT NULL,"
             + " addrs BLOB NOT NULL);";
 
+        private static final String RECENT_TABLE = "recent";
+        private static final int RECENT_TABLE_SIZE = 10;
+        private static final String RECENT_CREATE =
+            "CREATE TABLE " + RECENT_TABLE
+            + " (_id INTEGER PRIMARY KEY,"
+            + " address TEXT NOT NULL UNIQUE);";
+
         private static final int TRUE = 1;
         private static final int FALSE = 0;
 
-        public ReminderEntries(Context context) {
-            super(context, DATABASE_VERSION, DATABASE_TABLE, DATABASE_CREATE);
+        private final DatabaseHelper mDbHelper;
+
+        private static class DatabaseHelper extends SQLiteOpenHelper {
+            public DatabaseHelper(Context context) {
+                super(context, DATABASE_NAME, null, DATABASE_VERSION);
+
+                if (Log.isLoggable(TAG, Log.DEBUG))
+                    Log.d(TAG, "created database helper");
+            }
+
+            @Override
+            public void onCreate(SQLiteDatabase db) {
+                if (Log.isLoggable(TAG, Log.DEBUG))
+                    Log.d(TAG, "creating table " + ENTRIES_TABLE
+                          + ": " + ENTRIES_CREATE);
+                db.execSQL(ENTRIES_CREATE);
+
+                if (Log.isLoggable(TAG, Log.DEBUG))
+                    Log.d(TAG, "creating table " + RECENT_TABLE
+                          + ": " + RECENT_CREATE);
+                db.execSQL(RECENT_CREATE);
+                //db.execSQL(RECENT_LIMIT);
+            }
+
+            @Override
+            public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+                if (Log.isLoggable(TAG, Log.WARN))
+                    Log.w(TAG, "Upgrading database from version " + oldVersion
+                          + " to " + newVersion
+                          + ", which destroys all old data");
+                db.execSQL("DROP TABLE IF EXISTS " + ENTRIES_TABLE);
+                db.execSQL("DROP TABLE IF EXISTS " + RECENT_TABLE);
+                onCreate(db);
+            }
         }
 
-        @Override
-        public long insert(ContentValues values) {
+        public Database(Context context) {
+            mDbHelper = new DatabaseHelper(context);
+        }
+
+        public long insert(String table, ContentValues values) {
             final SQLiteDatabase db = mDbHelper.getWritableDatabase();
-            return db.insert(DATABASE_TABLE, null, values);
+            return db.insert(table, null, values);
         }
 
-        @Override
-        public int update(long id, ContentValues values) {
+        public int update(String table, long id, ContentValues values) {
             final SQLiteDatabase db = mDbHelper.getWritableDatabase();
-            return db.update(DATABASE_TABLE, values, Columns._ID + "=" + id, null);
+            return db.update(table, values, "_id=" + id, null);
         }
 
-        @Override
-        public int delete(long id) {
+        public int delete(String table, String whereClause,
+                          String[] whereArgs) {
             final SQLiteDatabase db = mDbHelper.getWritableDatabase();
-            return db.delete(DATABASE_TABLE, Columns._ID + "=" + id, null);
+            return db.delete(table, whereClause, whereArgs);
         }
 
-        public Cursor getAll() {
-            return query(null);
+        public Cursor getAllEntries() {
+            return query(ENTRIES_TABLE, ReminderEntry.Columns.QUERY_COLUMNS,
+                         null);
         }
 
         public Cursor getEnabled() {
-            return query(Columns.ENABLED + "=" + TRUE);
+            return query(ENTRIES_TABLE, ReminderEntry.Columns.QUERY_COLUMNS,
+                         ReminderEntry.Columns.ENABLED + "=" + TRUE);
         }
 
         public Cursor getDisabled() {
-            return query(Columns.ENABLED + "=" + FALSE);
+            return query(ENTRIES_TABLE, ReminderEntry.Columns.QUERY_COLUMNS,
+                         ReminderEntry.Columns.ENABLED + "=" + FALSE);
         }
 
         public Cursor getEntry(long id) throws SQLException {
-            return query(Columns._ID + "=" + id);
+            return query(ENTRIES_TABLE, ReminderEntry.Columns.QUERY_COLUMNS,
+                         ReminderEntry.Columns._ID + "=" + id);
         }
 
-        private Cursor query(String selection) {
+        private Cursor query(String table, String[] columns, String selection) {
             final SQLiteDatabase db = mDbHelper.getReadableDatabase();
-            return db.query(true,
-                            DATABASE_TABLE,
-                            Columns.QUERY_COLUMNS,
-                            selection,
+            return db.query(true, table, columns, selection,
                             null, null, null, null, null);
         }
     }
@@ -123,25 +183,25 @@ public final class ReminderProvider extends ContentProvider {
 
     public static ReminderEntry cursorToEntry(Cursor cursor) {
         Time time = null;
-        if (!cursor.isNull(Columns.TIME_INDEX)) {
+        if (!cursor.isNull(ReminderEntry.Columns.TIME_INDEX)) {
             time = new Time();
-            time.set(cursor.getLong(Columns.TIME_INDEX));
+            time.set(cursor.getLong(ReminderEntry.Columns.TIME_INDEX));
         }
         Time lastCheck = null;
-        if (!cursor.isNull(Columns.LASTCHECK_INDEX)) {
+        if (!cursor.isNull(ReminderEntry.Columns.LASTCHECK_INDEX)) {
             lastCheck = new Time();
-            lastCheck.set(cursor.getLong(Columns.LASTCHECK_INDEX));
+            lastCheck.set(cursor.getLong(ReminderEntry.Columns.LASTCHECK_INDEX));
         }
-        final byte[] blob = cursor.getBlob(Columns.ADDRESSES_INDEX);
+        final byte[] blob = cursor.getBlob(ReminderEntry.Columns.ADDRESSES_INDEX);
         final ReminderEntry entry =
-            new ReminderEntry(cursor.getLong(Columns.ID_INDEX),
-                              cursor.getString(Columns.LOCATION_INDEX),
-                              cursor.getString(Columns.NOTE_INDEX),
+            new ReminderEntry(cursor.getLong(ReminderEntry.Columns.ID_INDEX),
+                              cursor.getString(ReminderEntry.Columns.LOCATION_INDEX),
+                              cursor.getString(ReminderEntry.Columns.NOTE_INDEX),
                               time, lastCheck,
                               ReminderEntry.deserializeAddresses(blob));
         entry.lastCheck = lastCheck;
         entry.enabled =
-            cursor.getInt(Columns.ENABLED_INDEX) == ReminderEntries.TRUE
+            cursor.getInt(ReminderEntry.Columns.ENABLED_INDEX) == Database.TRUE
             ? true : false;
 
         return entry;
@@ -149,18 +209,18 @@ public final class ReminderProvider extends ContentProvider {
 
     public static ContentValues packEntryToValues(ReminderEntry entry) {
         ContentValues initialValues = new ContentValues();
-        initialValues.put(Columns.LOCATION, entry.location);
-        initialValues.put(Columns.NOTE, entry.note);
-        initialValues.put(Columns.ENABLED,
-                          entry.enabled ? ReminderEntries.TRUE
-                                        : ReminderEntries.FALSE);
-        initialValues.put(Columns.ADDRESSES,
+        initialValues.put(ReminderEntry.Columns.LOCATION, entry.location);
+        initialValues.put(ReminderEntry.Columns.NOTE, entry.note);
+        initialValues.put(ReminderEntry.Columns.ENABLED,
+                          entry.enabled ? Database.TRUE
+                                        : Database.FALSE);
+        initialValues.put(ReminderEntry.Columns.ADDRESSES,
                           ReminderEntry.serializeAddresses(entry.addresses));
         if (entry.time != null)
-            initialValues.put(Columns.TIME,
+            initialValues.put(ReminderEntry.Columns.TIME,
                               entry.time.toMillis(false));
         if (entry.lastCheck != null)
-            initialValues.put(Columns.LASTCHECK, entry.lastCheck.toMillis(false));
+            initialValues.put(ReminderEntry.Columns.LASTCHECK, entry.lastCheck.toMillis(false));
 
         return initialValues;
     }
@@ -175,6 +235,8 @@ public final class ReminderProvider extends ContentProvider {
             return "vnd.android.cursor.dir/vnd.shi.ning.locrem.entries";
         case ENTRIES_ID:
             return "vnd.android.cursor.item/vnd.shi.ning.locrem.entries";
+        case RECENT:
+            return "vnd.android.cursor.dir/vnd.shi.ning.locrem.recent";
         default:
             throw new IllegalArgumentException("Unknown URI");
         }
@@ -182,16 +244,36 @@ public final class ReminderProvider extends ContentProvider {
 
     @Override
     public boolean onCreate() {
-        mEntries = new ReminderEntries(getContext());
+        mDb = new Database(getContext());
         return true;
     }
 
     @Override
     public Uri insert(Uri uri, ContentValues values) {
-        if (mUriMatcher.match(uri) != ENTRIES)
+        final int type = mUriMatcher.match(uri);
+        if (type != ENTRIES && type != RECENT)
             throw new IllegalArgumentException("Cannot insert into URI: " + uri);
 
-        final long id = mEntries.insert(values);
+        long id;
+        if (type == ENTRIES) {
+            id = mDb.insert(Database.ENTRIES_TABLE, values);
+        } else {
+            id = mDb.insert(Database.RECENT_TABLE, values);
+            if (id < 0) {
+                if (Log.isLoggable(TAG, Log.DEBUG))
+                    Log.d(TAG, "address already exists in recent: "
+                          + values.getAsString(RecentColumns.ADDRESS));
+                return null;
+            }
+
+            final int count = mDb.delete(Database.RECENT_TABLE,
+                                         BaseColumns._ID + " <= (SELECT MAX("
+                                         + BaseColumns._ID + ") FROM "
+                                         + Database.RECENT_TABLE + ") - "
+                                         + Database.RECENT_TABLE_SIZE, null);
+            if (Log.isLoggable(TAG, Log.DEBUG))
+                Log.d(TAG, "deleted " + count + " oldest entries");
+        }
         if (id < 0)
             throw new SQLException("Failed to insert into URI: " + uri);
 
@@ -214,19 +296,23 @@ public final class ReminderProvider extends ContentProvider {
 
         switch (match) {
         case ENTRIES:
-            res = mEntries.getAll();
+            res = mDb.getAllEntries();
             break;
         case ENTRIES_ENABLED:
-            res = mEntries.getEnabled();
+            res = mDb.getEnabled();
             break;
         case ENTRIES_DISABLED:
-            res = mEntries.getDisabled();
+            res = mDb.getDisabled();
             break;
         case ENTRIES_ID:
-            res = mEntries.getEntry(Long.parseLong(uri.getPathSegments().get(1)));
+            res = mDb.getEntry(Long.parseLong(uri.getPathSegments().get(1)));
+            break;
+        case RECENT:
+            res = mDb.query(Database.RECENT_TABLE, RecentColumns.QUERY_COLUMNS,
+                            selection);
             break;
         default:
-            throw new IllegalArgumentException("Unknown URI");
+            throw new IllegalArgumentException("Unknown URI: " + uri);
         }
 
         if (res == null) {
@@ -248,7 +334,7 @@ public final class ReminderProvider extends ContentProvider {
             throw new IllegalArgumentException("Cannot delete URI: " + uri);
 
         final long id = Long.parseLong(uri.getPathSegments().get(1));
-        final int count = mEntries.update(id, values);
+        final int count = mDb.update(Database.ENTRIES_TABLE, id, values);
 
         if (Log.isLoggable(TAG, Log.DEBUG))
             Log.d(TAG, "updated " + id);
@@ -259,11 +345,19 @@ public final class ReminderProvider extends ContentProvider {
 
     @Override
     public int delete(Uri uri, String selection, String[] selectionArgs) {
-        if (mUriMatcher.match(uri) != ENTRIES_ID)
+        final int match = mUriMatcher.match(uri);
+        if (match != ENTRIES_ID)
             throw new IllegalArgumentException("Cannot delete URI: " + uri);
 
-        final int count =
-            mEntries.delete(Long.parseLong(uri.getPathSegments().get(1)));
+        int count;
+        if (match == ENTRIES_ID)
+            count =
+                mDb.delete(Database.ENTRIES_TABLE, BaseColumns._ID,
+                           new String[] {uri.getPathSegments().get(1)});
+        else
+            count =
+                mDb.delete(Database.RECENT_TABLE, BaseColumns._ID,
+                           new String[] {uri.getPathSegments().get(1)});
 
         if (Log.isLoggable(TAG, Log.DEBUG))
             Log.d(TAG, "deleted " + uri);

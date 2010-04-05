@@ -6,21 +6,30 @@ import java.util.List;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.Intent;
 import android.content.res.Resources;
+import android.database.Cursor;
 import android.graphics.drawable.Drawable;
 import android.location.Address;
 import android.location.Geocoder;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.AdapterView;
+import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.FilterQueryProvider;
+import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
+import android.widget.AdapterView.OnItemClickListener;
 import android.widget.TextView.OnEditorActionListener;
 
 import com.google.android.maps.GeoPoint;
@@ -32,6 +41,7 @@ import com.google.android.maps.Overlay;
 import com.google.android.maps.OverlayItem;
 
 public final class EditLocation extends MapActivity {
+    private static final String TAG = "EditLocation";
     private static final int DIALOG_NONE = -1;
     private static final int DIALOG_NETWORK_UNAVAILABLE = 0;
     private static final int DIALOG_NOT_FOUND = 1;
@@ -40,7 +50,7 @@ public final class EditLocation extends MapActivity {
     private MapView mMapView;
     private MapController mMapController;
     private List<Overlay> mMapOverlays;
-    private EditText mLocation;
+    private AutoCompleteTextView mLocation;
     private LocationOverlay mItemizedOverlay;
     private AlertDialog.Builder mAlertBuilder;
     private List<Address> mAddresses;
@@ -79,7 +89,7 @@ public final class EditLocation extends MapActivity {
         protected Integer doInBackground(Object... params) {
             final boolean isAddress = (Boolean) params[0];
 
-            synchronized (mAddresses) {
+            synchronized (EditLocation.this) {
                 try {
                     if (isAddress)
                         mAddresses = mGeo.getFromLocationName((String) params[1],
@@ -99,6 +109,12 @@ public final class EditLocation extends MapActivity {
 
             if (!isAddress)
                 publishProgress((Void) null);
+
+            // Save address in recent
+            final ContentValues values = new ContentValues();
+            values.put(ReminderProvider.RecentColumns.ADDRESS,
+                       mLocation.getText().toString());
+            getContentResolver().insert(ReminderProvider.RECENT_URI, values);
 
             return DIALOG_NONE;
         }
@@ -120,6 +136,30 @@ public final class EditLocation extends MapActivity {
         }
     }
 
+    private static final class RecentFilter implements FilterQueryProvider {
+        private final ContentResolver mResolver;
+
+        public RecentFilter(ContentResolver c) {
+            mResolver = c;
+        }
+
+        @Override
+        public Cursor runQuery(CharSequence constraint) {
+            final String selection = (ReminderProvider.RecentColumns.ADDRESS
+                    + " LIKE '" + constraint + "%'");
+            return mResolver.query(ReminderProvider.RECENT_URI, null,
+                                   selection, null, null);
+        }
+    }
+
+    private static final class RecentCursorToString
+    implements SimpleCursorAdapter.CursorToStringConverter {
+        @Override
+        public CharSequence convertToString(Cursor cursor) {
+            return cursor.getString(ReminderProvider.RecentColumns.ADDRESS_INDEX);
+        }
+    }
+
     @Override
     protected void onCreate(Bundle state) {
         super.onCreate(state);
@@ -138,8 +178,19 @@ public final class EditLocation extends MapActivity {
 
         final InputMethodManager ime =
             (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
-        mLocation = (EditText) findViewById(R.id.edit_location);
+        mLocation = (AutoCompleteTextView) findViewById(R.id.edit_location);
         mGeo = new Geocoder(getApplicationContext());
+        mLocation.setOnItemClickListener(new OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> arg0, View arg1,
+                                    int arg2, long arg3) {
+                final String address = ((TextView) arg1).getText().toString();
+                if (Log.isLoggable(TAG, Log.VERBOSE))
+                    Log.v(TAG, "selected from drop down menu: " + address);
+                ime.hideSoftInputFromWindow(arg1.getWindowToken(), 0);
+                new GeocodeTask().execute(true, address);
+            }
+        });
         mLocation.setOnEditorActionListener(new OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView v, int actionId,
@@ -170,7 +221,7 @@ public final class EditLocation extends MapActivity {
                 Intent intent = new Intent();
                 intent.putExtra(ReminderEntry.Columns.LOCATION,
                                 mLocation.getText().toString());
-                synchronized (mAddresses) {
+                synchronized (EditLocation.this) {
                     intent.putExtra(ReminderEntry.Columns.ADDRESSES,
                                     ReminderEntry.serializeAddresses(mAddresses));
                 }
@@ -194,6 +245,19 @@ public final class EditLocation extends MapActivity {
             if (mAddresses != null)
                 updateMap(true);
         }
+
+        // Try to get the recent entries
+        final Cursor c = managedQuery(ReminderProvider.RECENT_URI,
+                                      null, null, null, null);
+        final String[] from =
+            new String[] {ReminderProvider.RecentColumns.ADDRESS};
+        final int[] to = new int[] {R.id.recent_address};
+        final SimpleCursorAdapter recent =
+            new SimpleCursorAdapter(this, R.layout.recent_address_item,
+                                    c, from, to);
+        recent.setFilterQueryProvider(new RecentFilter(getContentResolver()));
+        recent.setCursorToStringConverter(new RecentCursorToString());
+        mLocation.setAdapter(recent);
     }
 
     @Override
