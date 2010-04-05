@@ -103,8 +103,10 @@ public final class ReminderEntry implements Serializable {
 
         // Length preceded byte array
         try {
-            out.writeByte(addresses.size());
-            for (Address a : addresses) {
+            final int length = addresses.size();
+            out.writeByte(length);
+            for (int i = 0; i < length; i++) {
+                final Address a = addresses.get(i);
                 /*
                  * longitude
                  * latitude

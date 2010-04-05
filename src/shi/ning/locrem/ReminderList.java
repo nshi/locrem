@@ -30,15 +30,15 @@ import android.widget.Toast;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 
 public final class ReminderList extends ListActivity {
-    private static final String TAG = "ReminderList";
+    static final String TAG = "ReminderList";
 
     private static final int ACTIVITY_CREATE = 0;
     private static final int ACTIVITY_EDIT = 1;
 
     private static final int DELETE_ID = Menu.FIRST + 1;
 
-    private LayoutInflater mLayoutFactory;
-    private ProximityManagerService mPMService = null;
+    LayoutInflater mLayoutFactory;
+    ProximityManagerService mPMService = null;
     private final ServiceConnection mPMConnection = new ServiceConnection() {
         @Override
         public void onServiceDisconnected(ComponentName name) {
@@ -84,7 +84,7 @@ public final class ReminderList extends ListActivity {
         }
     }
 
-    private void toggleIndicator(ImageView indicator, ReminderEntry entry) {
+    void toggleIndicator(ImageView indicator, ReminderEntry entry) {
         final boolean enabled = entry.enabled;
         indicator.setImageResource(enabled ? android.R.drawable.button_onoff_indicator_off
                                           : android.R.drawable.button_onoff_indicator_on);
@@ -231,7 +231,7 @@ public final class ReminderList extends ListActivity {
         setListAdapter(notes);
     }
 
-    private void createEntry() {
+    void createEntry() {
         startActivityForResult(new Intent(this, ReminderEdit.class),
                                ACTIVITY_CREATE);
     }

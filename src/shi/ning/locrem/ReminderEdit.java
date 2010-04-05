@@ -23,13 +23,13 @@ import android.widget.TextView;
 import android.widget.TimePicker;
 
 public final class ReminderEdit extends Activity {
-    private static final String TAG = "ReminderEdit";
+    static final String TAG = "ReminderEdit";
     private static final int ACTIVITY_LOCATION = 0;
     private static final int DIALOG_DATE = 1;
     private static final int DIALOG_TIME = 2;
 
     private long mId;
-    private ReminderEntry mEntry;
+    ReminderEntry mEntry;
 
     private TextView mLocationLabel;
     private TextView mDateLabel;
@@ -187,7 +187,7 @@ public final class ReminderEdit extends Activity {
         outState.putLong(Columns._ID, mId);
     }
 
-    private void setLocation() {
+    void setLocation() {
         Intent i = new Intent(this, EditLocation.class);
         if (mEntry.location != null)
             i.putExtra(Columns.LOCATION, mEntry.location);
@@ -197,7 +197,7 @@ public final class ReminderEdit extends Activity {
         startActivityForResult(i, ACTIVITY_LOCATION);
     }
 
-    private void saveEntry() {
+    void saveEntry() {
         mEntry.note = mNote.getText().toString();
         final ContentValues values = ReminderProvider.packEntryToValues(mEntry);
         if (mId >= 0) {
@@ -219,11 +219,11 @@ public final class ReminderEdit extends Activity {
             mLocationLabel.setText(R.string.location);
     }
 
-    private void updateDateLabel() {
+    void updateDateLabel() {
         mDateLabel.setText(mEntry.time.format("%a, %b %e"));
     }
 
-    private void updateTimeLabel() {
+    void updateTimeLabel() {
         mTimeLabel.setText(mEntry.time.format("%I:%M %p"));
     }
 }

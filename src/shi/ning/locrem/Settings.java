@@ -14,17 +14,17 @@ import android.widget.Toast;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 
 public final class Settings extends Activity {
-    private static final String TAG = "Settings";
+    static final String TAG = "Settings";
     private static final double WALKING_SPEED = 1.66; // 1.66 m/s
 
     public static final String KEY_RANGE = "range";
 
     public static final int DEFAULT_RANGE = 500;
 
-    private SharedPreferences mSettings;
+    SharedPreferences mSettings;
     private SeekBar mRangeBar;
-    private TextView mDistanceLabel;
-    private TextView mWalkingLabel;
+    TextView mDistanceLabel;
+    TextView mWalkingLabel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

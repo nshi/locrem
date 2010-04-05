@@ -33,7 +33,7 @@ import android.text.format.Time;
 import android.util.Log;
 
 public final class ProximityManager extends Service {
-    private final static String TAG = "ProximityManager";
+    final static String TAG = "ProximityManager";
 
     private final static int SERVICE_ALARM = 0;
 
@@ -55,13 +55,13 @@ public final class ProximityManager extends Service {
         }
     };
 
-    private String mProvider;
+    String mProvider;
     private Context mContext;
     private Geocoder mGeocoder;
     private LocationManager mManager;
     private ProximityListener mListener;
     private ProximityListener mSecondaryListener;
-    private int mRange;
+    int mRange;
 
     private final class ProximityListener implements LocationListener {
         @Override
@@ -123,7 +123,8 @@ public final class ProximityManager extends Service {
             PreferenceManager.getDefaultSharedPreferences(mContext);
         settings.registerOnSharedPreferenceChangeListener(new OnSharedPreferenceChangeListener() {
             @Override
-            public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+            public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
+                                                  String key) {
                 mRange = settings.getInt(key, Settings.DEFAULT_RANGE);
                 if (Log.isLoggable(TAG, Log.DEBUG))
                     Log.d(TAG, key + " value changed to " + mRange);
@@ -188,7 +189,7 @@ public final class ProximityManager extends Service {
         }
     }
 
-    private void unregister(final String provider) {
+    void unregister(final String provider) {
         if (provider.equals(PRIMARY_PROVIDER))
             mManager.removeUpdates(mListener);
         else
@@ -198,7 +199,7 @@ public final class ProximityManager extends Service {
             Log.v(TAG, provider + " unregistered");
     }
 
-    private void register(final String provider) {
+    void register(final String provider) {
         /*
          * TODO Should ask user if they want to enable location service
          * if no provider is available.
@@ -222,7 +223,7 @@ public final class ProximityManager extends Service {
         }
     }
 
-    private void onEntryChanged(long id) {
+    void onEntryChanged(long id) {
         final Uri uri =
             ContentUris.withAppendedId(ReminderProvider.CONTENT_URI, id);
         final Cursor cursor =
@@ -260,8 +261,9 @@ public final class ProximityManager extends Service {
         if (current == null || entries == null)
             return;
 
-        for (ReminderEntry entry : entries) {
-            checkEntry(entry, now, current);
+        final int length = entries.size();
+        for (int i = 0; i < length; i++) {
+            checkEntry(entries.get(i), now, current);
         }
     }
 
@@ -291,7 +293,10 @@ public final class ProximityManager extends Service {
         if (current == null)
             return;
 
-        for (Address a : entry.addresses) {
+        final List<Address> addresses = entry.addresses;
+        final int length = addresses.size();
+        for (int i = 0; i < length; i++) {
+            final Address a = addresses.get(i);
             if (inRange(current, a)) {
                 // Alert the user
                 notifyUser(entry.note);

@@ -17,7 +17,7 @@ import android.text.format.Time;
 import android.util.Log;
 
 public final class ReminderProvider extends ContentProvider {
-    private static final String TAG = "ReminderProvider";
+    static final String TAG = "ReminderProvider";
     private static final String AUTHORITY = "shi.ning.locrem.reminderprovider";
     private static final int ENTRIES = 1;
     private static final int ENTRIES_ENABLED = 2;
