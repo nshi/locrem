@@ -33,12 +33,12 @@ import android.text.format.Time;
 import android.util.Log;
 
 public final class ProximityManager extends Service {
-    final static String TAG = "ProximityManager";
+    static final String TAG = "ProximityManager";
 
-    private final static int SERVICE_ALARM = 0;
+    private static final int SERVICE_ALARM = 0;
 
-    private final static int MIN_TIME = 300000; // 5 minutes
-    private final static int MIN_DISTANCE = 200; // 200 meters
+    private static final int MIN_TIME = 300000; // 5 minutes
+    private static final int MIN_DISTANCE = 200; // 200 meters
 
     private static final String PRIMARY_PROVIDER =
         LocationManager.NETWORK_PROVIDER;
@@ -147,7 +147,6 @@ public final class ProximityManager extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        // TODO: maybe we should check for redelivery
         if (Log.isLoggable(TAG, Log.DEBUG))
             Log.d(TAG, "starting service with flags " + flags
                   + " and id " + startId);
