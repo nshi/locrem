@@ -9,7 +9,6 @@ import java.io.Serializable;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
-
 import android.database.Cursor;
 import android.location.Address;
 import android.provider.BaseColumns;
@@ -24,11 +23,13 @@ public final class ReminderEntry implements Serializable {
     public Time time;
     public Time lastCheck;
     public List<Address> addresses;
+    public String tag;
     public boolean enabled;
 
     public static final class Columns implements BaseColumns {
         public static final String LOCATION = "loc";
         public static final String ADDRESSES = "addrs";
+        public static final String TAG = "tag";
         public static final String NOTE = "note";
         public static final String LASTCHECK = "last";
         public static final String TIME = "time";
@@ -40,6 +41,7 @@ public final class ReminderEntry implements Serializable {
                                                       ENABLED,
                                                       LOCATION,
                                                       NOTE,
+                                                      TAG,
                                                       ADDRESSES};
 
         // Have to be in sync with QUERY_COLUMNS
@@ -49,7 +51,8 @@ public final class ReminderEntry implements Serializable {
         public static final int ENABLED_INDEX = 3;
         public static final int LOCATION_INDEX = 4;
         public static final int NOTE_INDEX = 5;
-        public static final int ADDRESSES_INDEX = 6;
+        public static final int TAG_INDEX = 6;
+        public static final int ADDRESSES_INDEX = 7;
     }
 
     public ReminderEntry(Cursor in) {
@@ -70,20 +73,22 @@ public final class ReminderEntry implements Serializable {
         this.enabled = in.getInt(Columns.ENABLED_INDEX) == 1;
         this.location = in.getString(Columns.LOCATION_INDEX);
         this.note = in.getString(Columns.NOTE_INDEX);
+        this.tag = in.getString(Columns.TAG_INDEX);
         this.addresses = deserializeAddresses(in.getBlob(Columns.ADDRESSES_INDEX));
     }
 
     public ReminderEntry(String location, String note, List<Address> addresses) {
-        this(-1, location, note, null, null, addresses);
+        this(-1, location, note, null, null, null, addresses);
     }
 
     public ReminderEntry(String location, String note, Time time,
                          List<Address> addresses) {
-        this(-1, location, note, time, null, addresses);
+        this(-1, location, note, time, null, null, addresses);
     }
 
     public ReminderEntry(long id, String location, String note,
-                         Time time, Time lastCheck, List<Address> addresses) {
+                         Time time, Time lastCheck, String tag,
+                         List<Address> addresses) {
         this.id = id;
         if (time == null) {
             time = new Time();
@@ -93,6 +98,7 @@ public final class ReminderEntry implements Serializable {
         this.lastCheck = null;
         this.location = location;
         this.note = note;
+        this.tag = tag;
         this.addresses = addresses;
         this.enabled = true;
     }
