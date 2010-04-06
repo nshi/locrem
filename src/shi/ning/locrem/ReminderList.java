@@ -81,6 +81,14 @@ public final class ReminderList extends ListActivity {
 
             TextView note = (TextView) view.findViewById(R.id.list_note);
             note.setText(entry.note);
+
+            TextView tag = (TextView) view.findViewById(R.id.list_tag);
+            if (entry.tag != null) {
+                tag.setText(entry.tag);
+                tag.setVisibility(View.VISIBLE);
+            } else {
+                tag.setVisibility(View.GONE);
+            }
         }
     }
 

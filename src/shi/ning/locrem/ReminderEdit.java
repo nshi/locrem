@@ -7,6 +7,7 @@ import android.app.Dialog;
 import android.app.TimePickerDialog;
 import android.app.DatePickerDialog.OnDateSetListener;
 import android.app.TimePickerDialog.OnTimeSetListener;
+import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Intent;
@@ -14,13 +15,22 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.AdapterView;
+import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.EditText;
+import android.widget.FilterQueryProvider;
+import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
 import android.widget.TimePicker;
+import android.widget.AdapterView.OnItemClickListener;
+import android.widget.TextView.OnEditorActionListener;
 
 public final class ReminderEdit extends Activity {
     static final String TAG = "ReminderEdit";
@@ -34,6 +44,7 @@ public final class ReminderEdit extends Activity {
     private TextView mLocationLabel;
     private TextView mDateLabel;
     private TextView mTimeLabel;
+    AutoCompleteTextView mTag;
     private EditText mNote;
 
     private final OnDateSetListener mDateSetListener =
@@ -56,6 +67,33 @@ public final class ReminderEdit extends Activity {
                 updateTimeLabel();
             }
         };
+
+    private static final class TagFilter implements FilterQueryProvider {
+        private final ContentResolver mResolver;
+
+        public TagFilter(ContentResolver c) {
+            mResolver = c;
+        }
+
+        @Override
+        public Cursor runQuery(CharSequence constraint) {
+            final String selection = (ReminderEntry.Columns.TAG
+                    + " LIKE '" + constraint + "%'");
+            return mResolver.query(ReminderProvider.TAGS_URI, null,
+                                   selection, null, null);
+        }
+    }
+
+    private static final class TagCursorToString
+    implements SimpleCursorAdapter.CursorToStringConverter {
+        @Override
+        public CharSequence convertToString(Cursor cursor) {
+            if (!cursor.isNull(ReminderEntry.Columns.TAG_INDEX))
+                return cursor.getString(ReminderEntry.Columns.TAG_INDEX);
+            else
+                return null;
+        }
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -83,6 +121,33 @@ public final class ReminderEdit extends Activity {
             @Override
             public void onClick(View v) {
                 showDialog(DIALOG_TIME);
+            }
+        });
+
+        mTag = (AutoCompleteTextView) findViewById(R.id.edit_tag);
+        final InputMethodManager ime =
+            (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+        mTag.setOnItemClickListener(new OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> arg0, View arg1,
+                                    int arg2, long arg3) {
+                mEntry.tag = ((TextView) arg1).getText().toString();
+                mTag.setText(mEntry.tag);
+                ime.hideSoftInputFromInputMethod(arg1.getWindowToken(), 0);
+            }
+        });
+        mTag.setOnEditorActionListener(new OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId,
+                                          KeyEvent event) {
+                Log.w(TAG, Integer.toString(actionId));
+                if (actionId != EditorInfo.IME_ACTION_DONE)
+                    return false;
+                Log.w(TAG, "hadnling key event");
+                mEntry.tag = v.getText().toString();
+                ime.hideSoftInputFromInputMethod(v.getWindowToken(), 0);
+                Log.w(TAG, "ime should be hidden");
+                return true;
             }
         });
 
@@ -115,6 +180,19 @@ public final class ReminderEdit extends Activity {
                 finish();
             }
         });
+
+        // Set auto complete for the tags
+        final Cursor c = managedQuery(ReminderProvider.TAGS_URI,
+                                      null, null, null, null);
+        final String[] from =
+            new String[] {ReminderEntry.Columns.TAG};
+        final int[] to = new int[] {R.id.auto_complete_entry};
+        final SimpleCursorAdapter tags =
+            new SimpleCursorAdapter(this, R.layout.auto_complete_item,
+                                    c, from, to);
+        tags.setFilterQueryProvider(new TagFilter(getContentResolver()));
+        tags.setCursorToStringConverter(new TagCursorToString());
+        mTag.setAdapter(tags);
     }
 
     @Override
@@ -171,11 +249,11 @@ public final class ReminderEdit extends Activity {
                 mEntry = ReminderProvider.cursorToEntry(cursor);
         }
 
-        if (mEntry != null)
-            mNote.setText(mEntry.note);
-        else
+        if (mEntry == null)
             mEntry = new ReminderEntry("", "", null);
 
+        mTag.setText(mEntry.tag);
+        mNote.setText(mEntry.note);
         updateLocationLabel();
         updateDateLabel();
         updateTimeLabel();

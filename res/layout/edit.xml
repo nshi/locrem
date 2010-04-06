@@ -62,6 +62,13 @@
         </LinearLayout>
     </LinearLayout>
 
+    <AutoCompleteTextView android:id="@+id/edit_tag"
+                          android:layout_width="fill_parent"
+                          android:layout_height="wrap_content"
+                          android:hint="@string/tag"
+                          android:inputType="text"
+                          android:imeOptions="actionDone" />
+
     <EditText android:id="@+id/note"
               android:layout_width="fill_parent"
               android:layout_height="0dip"

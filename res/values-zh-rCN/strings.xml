@@ -7,6 +7,7 @@
     <string name="time">时间</string>
     <string name="location">地点</string>
     <string name="address">地址</string>
+    <string name="tag">标签</string>
     <string name="note">提示内容</string>
     <string name="save">保存</string>
     <string name="cancel">取消</string>

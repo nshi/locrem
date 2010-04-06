@@ -252,9 +252,9 @@ public final class EditLocation extends MapActivity {
                                       null, null, null, null);
         final String[] from =
             new String[] {ReminderProvider.RecentColumns.ADDRESS};
-        final int[] to = new int[] {R.id.recent_address};
+        final int[] to = new int[] {R.id.auto_complete_entry};
         final SimpleCursorAdapter recent =
-            new SimpleCursorAdapter(this, R.layout.recent_address_item,
+            new SimpleCursorAdapter(this, R.layout.auto_complete_item,
                                     c, from, to);
         recent.setFilterQueryProvider(new RecentFilter(getContentResolver()));
         recent.setCursorToStringConverter(new RecentCursorToString());

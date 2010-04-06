@@ -23,7 +23,8 @@ public final class ReminderProvider extends ContentProvider {
     private static final int ENTRIES_ENABLED = 2;
     private static final int ENTRIES_DISABLED = 3;
     private static final int ENTRIES_ID = 4;
-    private static final int RECENT = 5;
+    private static final int ENTRIES_TAGS = 5;
+    private static final int RECENT = 6;
     private static final UriMatcher mUriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
 
     static {
@@ -34,6 +35,8 @@ public final class ReminderProvider extends ContentProvider {
                            ENTRIES_DISABLED);
         mUriMatcher.addURI(AUTHORITY, Database.ENTRIES_TABLE + "/#",
                            ENTRIES_ID);
+        mUriMatcher.addURI(AUTHORITY, Database.ENTRIES_TABLE + "/tags",
+                           ENTRIES_TAGS);
         mUriMatcher.addURI(AUTHORITY, Database.RECENT_TABLE, RECENT);
     }
 
@@ -45,6 +48,9 @@ public final class ReminderProvider extends ContentProvider {
     public static final Uri DISABLED_URI =
         Uri.parse("content://" + AUTHORITY + "/" + Database.ENTRIES_TABLE
                   + "/disabled");
+    public static final Uri TAGS_URI =
+        Uri.parse("content://" + AUTHORITY + "/" + Database.ENTRIES_TABLE
+                  + "/tags");
     public static final Uri RECENT_URI =
         Uri.parse("content://" + AUTHORITY + "/" + Database.RECENT_TABLE);
 
@@ -73,6 +79,7 @@ public final class ReminderProvider extends ContentProvider {
             + " last INTEGER,"
             + " enabled TINYINT,"
             + " loc text NOT NULL,"
+            + " tag text,"
             + " note text NOT NULL,"
             + " addrs BLOB NOT NULL);";
 
@@ -142,26 +149,6 @@ public final class ReminderProvider extends ContentProvider {
             return db.delete(table, whereClause, whereArgs);
         }
 
-        public Cursor getAllEntries() {
-            return query(ENTRIES_TABLE, ReminderEntry.Columns.QUERY_COLUMNS,
-                         null);
-        }
-
-        public Cursor getEnabled() {
-            return query(ENTRIES_TABLE, ReminderEntry.Columns.QUERY_COLUMNS,
-                         ReminderEntry.Columns.ENABLED + "=" + TRUE);
-        }
-
-        public Cursor getDisabled() {
-            return query(ENTRIES_TABLE, ReminderEntry.Columns.QUERY_COLUMNS,
-                         ReminderEntry.Columns.ENABLED + "=" + FALSE);
-        }
-
-        public Cursor getEntry(long id) throws SQLException {
-            return query(ENTRIES_TABLE, ReminderEntry.Columns.QUERY_COLUMNS,
-                         ReminderEntry.Columns._ID + "=" + id);
-        }
-
         private Cursor query(String table, String[] columns, String selection) {
             final SQLiteDatabase db = mDbHelper.getReadableDatabase();
             return db.query(true, table, columns, selection,
@@ -192,12 +179,16 @@ public final class ReminderProvider extends ContentProvider {
             lastCheck = new Time();
             lastCheck.set(cursor.getLong(ReminderEntry.Columns.LASTCHECK_INDEX));
         }
+        String tag = null;
+        if (!cursor.isNull(ReminderEntry.Columns.TAG_INDEX)) {
+            tag = cursor.getString(ReminderEntry.Columns.TAG_INDEX);
+        }
         final byte[] blob = cursor.getBlob(ReminderEntry.Columns.ADDRESSES_INDEX);
         final ReminderEntry entry =
             new ReminderEntry(cursor.getLong(ReminderEntry.Columns.ID_INDEX),
                               cursor.getString(ReminderEntry.Columns.LOCATION_INDEX),
                               cursor.getString(ReminderEntry.Columns.NOTE_INDEX),
-                              time, lastCheck,
+                              time, lastCheck, tag,
                               ReminderEntry.deserializeAddresses(blob));
         entry.lastCheck = lastCheck;
         entry.enabled =
@@ -214,6 +205,7 @@ public final class ReminderProvider extends ContentProvider {
         initialValues.put(ReminderEntry.Columns.ENABLED,
                           entry.enabled ? Database.TRUE
                                         : Database.FALSE);
+        initialValues.put(ReminderEntry.Columns.TAG, entry.tag);
         initialValues.put(ReminderEntry.Columns.ADDRESSES,
                           ReminderEntry.serializeAddresses(entry.addresses));
         if (entry.time != null)
@@ -296,16 +288,33 @@ public final class ReminderProvider extends ContentProvider {
 
         switch (match) {
         case ENTRIES:
-            res = mDb.getAllEntries();
+            res = mDb.query(Database.ENTRIES_TABLE,
+                            ReminderEntry.Columns.QUERY_COLUMNS,
+                            null);
             break;
         case ENTRIES_ENABLED:
-            res = mDb.getEnabled();
+            res = mDb.query(Database.ENTRIES_TABLE,
+                            ReminderEntry.Columns.QUERY_COLUMNS,
+                            ReminderEntry.Columns.ENABLED + "="
+                            + Database.TRUE);
             break;
         case ENTRIES_DISABLED:
-            res = mDb.getDisabled();
+            res = mDb.query(Database.ENTRIES_TABLE,
+                            ReminderEntry.Columns.QUERY_COLUMNS,
+                            ReminderEntry.Columns.ENABLED + "="
+                            + Database.FALSE);
             break;
         case ENTRIES_ID:
-            res = mDb.getEntry(Long.parseLong(uri.getPathSegments().get(1)));
+            res = mDb.query(Database.ENTRIES_TABLE,
+                            ReminderEntry.Columns.QUERY_COLUMNS,
+                            ReminderEntry.Columns._ID + "="
+                            + Long.parseLong(uri.getPathSegments().get(1)));
+            break;
+        case ENTRIES_TAGS:
+            res = mDb.query(Database.ENTRIES_TABLE,
+                            new String[] {ReminderEntry.Columns._ID,
+                                          ReminderEntry.Columns.TAG},
+                            selection);
             break;
         case RECENT:
             res = mDb.query(Database.RECENT_TABLE, RecentColumns.QUERY_COLUMNS,
