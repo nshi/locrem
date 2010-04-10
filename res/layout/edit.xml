@@ -12,7 +12,8 @@
               android:background="@android:drawable/list_selector_background"
               android:drawableLeft="@android:drawable/ic_dialog_map"
               android:gravity="center"
-              android:textColor="?android:attr/textColorPrimary"
+              android:textAppearance="?android:attr/textAppearanceLarge"
+              android:ellipsize="marquee"
               android:hint="@string/location" />
     <ImageView android:layout_width="fill_parent"
                android:layout_height="wrap_content"
@@ -47,7 +48,7 @@
                       android:layout_width="wrap_content"
                       android:gravity="center"
                       android:layout_weight="1"
-                      android:textColor="?android:attr/textColorPrimary"
+                      android:textAppearance="?android:attr/textAppearanceLarge"
                       android:hint="@string/date" />
             <TextView android:id="@+id/time_label"
                       android:clickable="true"
@@ -57,7 +58,7 @@
                       android:layout_width="wrap_content"
                       android:gravity="center"
                       android:layout_weight="1"
-                      android:textColor="?android:attr/textColorPrimary"
+                      android:textAppearance="?android:attr/textAppearanceLarge"
                       android:hint="@string/time" />
         </LinearLayout>
     </LinearLayout>
@@ -67,7 +68,7 @@
                           android:layout_height="wrap_content"
                           android:hint="@string/tag"
                           android:inputType="text"
-                          android:imeOptions="actionDone" />
+                          android:imeOptions="actionNext" />
 
     <EditText android:id="@+id/note"
               android:layout_width="fill_parent"
@@ -75,6 +76,7 @@
               android:layout_weight="1"
               android:scrollbars="vertical"
               android:hint="@string/note"
+              android:imeOptions="actionDone"
               android:gravity="top" />
 
     <LinearLayout android:orientation="horizontal"

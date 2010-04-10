@@ -20,14 +20,15 @@
               android:layout_alignParentRight="true"
               android:gravity="center_vertical"
               android:padding="6dip"
-              android:textSize="12sp"
+              android:textColor="?android:attr/textColorSecondary"
+              android:textAppearance="?android:attr/textAppearanceSmall"
               android:singleLine="true" />
     <TextView android:layout_width="fill_parent"
               android:layout_height="26dip"
               android:layout_toRightOf="@id/toggle"
               android:layout_toLeftOf="@id/list_tag"
               android:layout_alignParentBottom="true"
-              android:textSize="12sp"
+              android:textAppearance="?android:attr/textAppearanceMedium"
               android:id="@+id/list_location"
               android:singleLine="true" />
     <TextView android:id="@+id/list_note"
@@ -38,7 +39,7 @@
               android:layout_above="@id/list_location"
               android:layout_alignParentTop="true"
               android:gravity="center_vertical"
-              android:textSize="15sp"
+              android:textAppearance="?android:attr/textAppearanceLarge"
               android:ellipsize="marquee"
               android:singleLine="true" />
 </RelativeLayout>
