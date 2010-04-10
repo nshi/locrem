@@ -79,7 +79,7 @@ public final class ReminderProvider extends ContentProvider {
             + " last INTEGER,"
             + " enabled TINYINT,"
             + " loc text NOT NULL,"
-            + " tag text,"
+            + " tag text DEFAULT NULL,"
             + " note text NOT NULL,"
             + " addrs BLOB NOT NULL);";
 
@@ -224,6 +224,7 @@ public final class ReminderProvider extends ContentProvider {
         case ENTRIES:
         case ENTRIES_ENABLED:
         case ENTRIES_DISABLED:
+        case ENTRIES_TAGS:
             return "vnd.android.cursor.dir/vnd.shi.ning.locrem.entries";
         case ENTRIES_ID:
             return "vnd.android.cursor.item/vnd.shi.ning.locrem.entries";
@@ -312,8 +313,7 @@ public final class ReminderProvider extends ContentProvider {
             break;
         case ENTRIES_TAGS:
             res = mDb.query(Database.ENTRIES_TABLE,
-                            new String[] {ReminderEntry.Columns._ID,
-                                          ReminderEntry.Columns.TAG},
+                            ReminderEntry.Columns.QUERY_COLUMNS,
                             selection);
             break;
         case RECENT:

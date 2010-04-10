@@ -15,12 +15,8 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.view.inputmethod.EditorInfo;
-import android.view.inputmethod.InputMethodManager;
-import android.widget.AdapterView;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.DatePicker;
@@ -29,8 +25,6 @@ import android.widget.FilterQueryProvider;
 import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
 import android.widget.TimePicker;
-import android.widget.AdapterView.OnItemClickListener;
-import android.widget.TextView.OnEditorActionListener;
 
 public final class ReminderEdit extends Activity {
     static final String TAG = "ReminderEdit";
@@ -44,7 +38,7 @@ public final class ReminderEdit extends Activity {
     private TextView mLocationLabel;
     private TextView mDateLabel;
     private TextView mTimeLabel;
-    AutoCompleteTextView mTag;
+    private AutoCompleteTextView mTag;
     private EditText mNote;
 
     private final OnDateSetListener mDateSetListener =
@@ -77,8 +71,10 @@ public final class ReminderEdit extends Activity {
 
         @Override
         public Cursor runQuery(CharSequence constraint) {
-            final String selection = (ReminderEntry.Columns.TAG
-                    + " LIKE '" + constraint + "%'");
+            String selection = null;
+            if (constraint != null)
+                selection = (ReminderEntry.Columns.TAG + " LIKE '"
+                             + constraint + "%'");
             return mResolver.query(ReminderProvider.TAGS_URI, null,
                                    selection, null, null);
         }
@@ -88,10 +84,7 @@ public final class ReminderEdit extends Activity {
     implements SimpleCursorAdapter.CursorToStringConverter {
         @Override
         public CharSequence convertToString(Cursor cursor) {
-            if (!cursor.isNull(ReminderEntry.Columns.TAG_INDEX))
-                return cursor.getString(ReminderEntry.Columns.TAG_INDEX);
-            else
-                return null;
+            return cursor.getString(ReminderEntry.Columns.TAG_INDEX);
         }
     }
 
@@ -125,32 +118,6 @@ public final class ReminderEdit extends Activity {
         });
 
         mTag = (AutoCompleteTextView) findViewById(R.id.edit_tag);
-        final InputMethodManager ime =
-            (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
-        mTag.setOnItemClickListener(new OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> arg0, View arg1,
-                                    int arg2, long arg3) {
-                mEntry.tag = ((TextView) arg1).getText().toString();
-                mTag.setText(mEntry.tag);
-                ime.hideSoftInputFromInputMethod(arg1.getWindowToken(), 0);
-            }
-        });
-        mTag.setOnEditorActionListener(new OnEditorActionListener() {
-            @Override
-            public boolean onEditorAction(TextView v, int actionId,
-                                          KeyEvent event) {
-                Log.w(TAG, Integer.toString(actionId));
-                if (actionId != EditorInfo.IME_ACTION_DONE)
-                    return false;
-                Log.w(TAG, "hadnling key event");
-                mEntry.tag = v.getText().toString();
-                ime.hideSoftInputFromInputMethod(v.getWindowToken(), 0);
-                Log.w(TAG, "ime should be hidden");
-                return true;
-            }
-        });
-
         mNote = (EditText) findViewById(R.id.note);
 
         final Button save = (Button) findViewById(R.id.save);
@@ -276,6 +243,7 @@ public final class ReminderEdit extends Activity {
     }
 
     void saveEntry() {
+        mEntry.tag = mTag.getText().toString();
         mEntry.note = mNote.getText().toString();
         final ContentValues values = ReminderProvider.packEntryToValues(mEntry);
         if (mId >= 0) {
