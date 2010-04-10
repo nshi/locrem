@@ -188,7 +188,7 @@ public final class EditLocation extends MapActivity {
                 final String address = ((TextView) arg1).getText().toString();
                 if (Log.isLoggable(TAG, Log.VERBOSE))
                     Log.v(TAG, "selected from drop down menu: " + address);
-                ime.hideSoftInputFromWindow(arg1.getWindowToken(), 0);
+                ime.hideSoftInputFromWindow(arg1.getApplicationWindowToken(), 0);
                 new GeocodeTask().execute(true, address);
             }
         });
@@ -199,6 +199,7 @@ public final class EditLocation extends MapActivity {
                 if (actionId != EditorInfo.IME_ACTION_SEARCH)
                     return false;
                 ime.hideSoftInputFromWindow(v.getWindowToken(), 0);
+                ((AutoCompleteTextView) v).dismissDropDown();
                 new GeocodeTask().execute(true, v.getText().toString());
                 return true;
             }
