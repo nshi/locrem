@@ -4,7 +4,7 @@
               android:layout_width="fill_parent"
               android:layout_height="fill_parent">
     <TextView android:id="@+id/set_location"
-              android:layout_height="wrap_content"
+              android:layout_height="?android:attr/listPreferredItemHeight"
               android:layout_width="fill_parent"
               android:padding="7dip"
               android:clickable="true"
@@ -24,16 +24,13 @@
     <LinearLayout android:id="@+id/set_time"
                   android:background="@android:drawable/list_selector_background"
                   android:layout_width="fill_parent"
-                  android:layout_height="wrap_content"
+                  android:layout_height="?android:attr/listPreferredItemHeight"
                   android:orientation="horizontal">
         <ImageView android:layout_width="wrap_content"
-                   android:layout_height="wrap_content"
+                   android:layout_height="fill_parent"
                    android:layout_marginLeft="11dip"
-                   android:layout_marginTop="10dip"
                    android:layout_marginRight="11dip"
-                   android:layout_marginBottom="10dip"
                    android:duplicateParentState="true"
-                   android:gravity="center"
                    android:scaleType="center"
                    android:src="@android:drawable/ic_lock_idle_alarm" />
         <LinearLayout android:layout_width="fill_parent"

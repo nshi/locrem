@@ -1,35 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              android:orientation="vertical"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                android:orientation="vertical"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent">
+    <TextView android:id="@+id/add_alarm"
+              android:clickable="true"
+              android:focusable="true"
+              android:layout_height="?android:attr/listPreferredItemHeight"
               android:layout_width="fill_parent"
-              android:layout_height="fill_parent">
-    <LinearLayout android:id="@+id/add_alarm"
-                  android:clickable="true"
-                  android:focusable="true"
-                  android:background="@android:drawable/list_selector_background"
-                  android:layout_width="fill_parent"
-                  android:layout_height="wrap_content"
-                  android:orientation="horizontal">
-        <TextView android:layout_height="wrap_content"
-                  android:layout_width="wrap_content"
-                  android:drawableLeft="@android:drawable/ic_input_add"
-                  android:drawablePadding="11dip"
-                  android:layout_marginLeft="11dip"
-                  android:layout_marginTop="10dip"
-                  android:layout_marginBottom="10dip"
-                  android:gravity="center_vertical"
-                  android:textAppearance="?android:attr/textAppearanceLarge"
-                  android:textColor="?android:attr/textColorPrimary"
-                  android:text="@string/add_entry" />
-    </LinearLayout>
-    <ImageView android:layout_width="fill_parent"
+              android:layout_alignParentTop="true"
+              android:layout_alignParentLeft="true"
+              android:layout_alignParentRight="true"
+              android:background="@android:drawable/list_selector_background"
+              android:drawableLeft="@android:drawable/ic_input_add"
+              android:drawablePadding="11dip"
+              android:paddingLeft="11dip"
+              android:gravity="center_vertical"
+              android:textAppearance="?android:attr/textAppearanceLarge"
+              android:textColor="?android:attr/textColorPrimary"
+              android:text="@string/add_entry" />
+    <ImageView android:id="@+id/list_seperator"
+               android:layout_width="fill_parent"
                android:layout_height="wrap_content"
+               android:layout_alignParentLeft="true"
+               android:layout_alignParentRight="true"
+               android:layout_below="@id/add_alarm"
                android:scaleType="fitXY"
                android:gravity="fill_horizontal"
                android:src="@android:drawable/divider_horizontal_dark" />
 
     <ListView android:layout_width="fill_parent"
-              android:layout_height="0dip"
+              android:layout_height="fill_parent"
               android:layout_weight="1"
+              android:layout_alignParentLeft="true"
+              android:layout_alignParentRight="true"
+              android:layout_alignParentBottom="true"
+              android:layout_below="@id/list_seperator"
               android:id="@android:id/list" />
-</LinearLayout>
+</RelativeLayout>
