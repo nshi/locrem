@@ -160,6 +160,8 @@ public final class ReminderEdit extends Activity {
         tags.setFilterQueryProvider(new TagFilter(getContentResolver()));
         tags.setCursorToStringConverter(new TagCursorToString());
         mTag.setAdapter(tags);
+
+        populateFields();
     }
 
     @Override
@@ -183,13 +185,6 @@ public final class ReminderEdit extends Activity {
     }
 
     @Override
-    protected void onResume() {
-        super.onResume();
-
-        populateFields();
-    }
-
-    @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
@@ -206,8 +201,6 @@ public final class ReminderEdit extends Activity {
     }
 
     private void populateFields() {
-        // TODO Check if there is any unsaved data, if so, load it from the
-        // temporary table, otherwise wipe the slate clean.
         if (mEntry == null && mId >= 0) {
             final Uri uri = ContentUris.withAppendedId(ReminderProvider.CONTENT_URI,
                                                        mId);
