@@ -74,10 +74,12 @@ public final class ReminderEntry implements Serializable {
         this.location = in.getString(Columns.LOCATION_INDEX);
         this.note = in.getString(Columns.NOTE_INDEX);
         this.tag = in.getString(Columns.TAG_INDEX);
-        this.addresses = deserializeAddresses(in.getBlob(Columns.ADDRESSES_INDEX));
+        this.addresses =
+            deserializeAddresses(in.getBlob(Columns.ADDRESSES_INDEX));
     }
 
-    public ReminderEntry(String location, String note, List<Address> addresses) {
+    public ReminderEntry(String location, String note,
+                         List<Address> addresses) {
         this(-1, location, note, null, null, null, addresses);
     }
 

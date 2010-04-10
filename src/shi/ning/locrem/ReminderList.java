@@ -65,7 +65,8 @@ public final class ReminderList extends ListActivity {
         public void bindView(View view, Context context, Cursor cursor) {
             final ReminderEntry entry = new ReminderEntry(cursor);
 
-            final ImageView indicator = (ImageView) view.findViewById(R.id.toggle);
+            final ImageView indicator =
+                (ImageView) view.findViewById(R.id.toggle);
             indicator.setImageResource(entry.enabled ? android.R.drawable.button_onoff_indicator_on
                                                     : android.R.drawable.button_onoff_indicator_off);
 
@@ -104,8 +105,8 @@ public final class ReminderList extends ListActivity {
                                         ReminderProvider.packEntryToValues(entry),
                                         null, null) == 1) {
             if (Log.isLoggable(TAG, Log.DEBUG))
-                Log.d(TAG,
-                      entry.id + " is " + (entry.enabled ? "enabled" : "disabled"));
+                Log.d(TAG, entry.id + " is "
+                      + (entry.enabled ? "enabled" : "disabled"));
 
             try {
                 mPMService.onEntryChanged(entry.id);
@@ -157,7 +158,8 @@ public final class ReminderList extends ListActivity {
     }
 
     @Override
-    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
+    public void onCreateContextMenu(ContextMenu menu, View v,
+                                    ContextMenuInfo menuInfo) {
         super.onCreateContextMenu(menu, v, menuInfo);
         menu.add(0, DELETE_ID, 0, R.string.menu_delete);
     }
@@ -166,7 +168,8 @@ public final class ReminderList extends ListActivity {
     public boolean onContextItemSelected(MenuItem item) {
         switch (item.getItemId()) {
         case DELETE_ID:
-            AdapterContextMenuInfo info = (AdapterContextMenuInfo) item.getMenuInfo();
+            AdapterContextMenuInfo info =
+                (AdapterContextMenuInfo) item.getMenuInfo();
             deleteEntry(info.id);
             fillData();
             return true;
@@ -208,7 +211,8 @@ public final class ReminderList extends ListActivity {
     }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    protected void onActivityResult(int requestCode, int resultCode,
+                                    Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
         switch (requestCode) {
@@ -251,7 +255,8 @@ public final class ReminderList extends ListActivity {
     }
 
     private void deleteEntry(long id) {
-        final Uri uri = ContentUris.withAppendedId(ReminderProvider.CONTENT_URI, id);
+        final Uri uri =
+            ContentUris.withAppendedId(ReminderProvider.CONTENT_URI, id);
         if (getContentResolver().delete(uri, null, null) != 1)
             notify("Failed to delete entry: " + id, Toast.LENGTH_SHORT);
     }

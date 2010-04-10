@@ -127,7 +127,8 @@ public final class EditLocation extends MapActivity {
                 final ContentValues values = new ContentValues();
                 values.put(ReminderProvider.RecentColumns.ADDRESS,
                            mLocation.getText().toString());
-                getContentResolver().insert(ReminderProvider.RECENT_URI, values);
+                getContentResolver().insert(ReminderProvider.RECENT_URI,
+                                            values);
 
                 updateMap(true);
                 break;
@@ -188,7 +189,8 @@ public final class EditLocation extends MapActivity {
                 final String address = ((TextView) arg1).getText().toString();
                 if (Log.isLoggable(TAG, Log.VERBOSE))
                     Log.v(TAG, "selected from drop down menu: " + address);
-                ime.hideSoftInputFromWindow(arg1.getApplicationWindowToken(), 0);
+                ime.hideSoftInputFromWindow(arg1.getApplicationWindowToken(),
+                                            0);
                 new GeocodeTask().execute(true, address);
             }
         });

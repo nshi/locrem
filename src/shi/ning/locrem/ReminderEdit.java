@@ -185,7 +185,8 @@ public final class ReminderEdit extends Activity {
     }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    protected void onActivityResult(int requestCode, int resultCode,
+                                    Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
         switch (requestCode) {
@@ -202,8 +203,8 @@ public final class ReminderEdit extends Activity {
 
     private void populateFields() {
         if (mEntry == null && mId >= 0) {
-            final Uri uri = ContentUris.withAppendedId(ReminderProvider.CONTENT_URI,
-                                                       mId);
+            final Uri uri =
+                ContentUris.withAppendedId(ReminderProvider.CONTENT_URI, mId);
             final Cursor cursor = managedQuery(uri, null, null, null, null);
             if (cursor.moveToFirst())
                 mEntry = ReminderProvider.cursorToEntry(cursor);

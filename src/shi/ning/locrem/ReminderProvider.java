@@ -25,7 +25,8 @@ public final class ReminderProvider extends ContentProvider {
     private static final int ENTRIES_ID = 4;
     private static final int ENTRIES_TAGS = 5;
     private static final int RECENT = 6;
-    private static final UriMatcher mUriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
+    private static final UriMatcher mUriMatcher =
+        new UriMatcher(UriMatcher.NO_MATCH);
 
     static {
         mUriMatcher.addURI(AUTHORITY, Database.ENTRIES_TABLE, ENTRIES);
@@ -118,7 +119,8 @@ public final class ReminderProvider extends ContentProvider {
             }
 
             @Override
-            public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+            public void onUpgrade(SQLiteDatabase db, int oldVersion,
+                                  int newVersion) {
                 if (Log.isLoggable(TAG, Log.WARN))
                     Log.w(TAG, "Upgrading database from version " + oldVersion
                           + " to " + newVersion
@@ -160,7 +162,8 @@ public final class ReminderProvider extends ContentProvider {
         if (!cursor.moveToFirst())
             return null;
 
-        final LinkedList<ReminderEntry> entries = new LinkedList<ReminderEntry>();
+        final LinkedList<ReminderEntry> entries =
+            new LinkedList<ReminderEntry>();
         do {
             entries.add(cursorToEntry(cursor));
         } while (cursor.moveToNext());
@@ -183,7 +186,8 @@ public final class ReminderProvider extends ContentProvider {
         if (!cursor.isNull(ReminderEntry.Columns.TAG_INDEX)) {
             tag = cursor.getString(ReminderEntry.Columns.TAG_INDEX);
         }
-        final byte[] blob = cursor.getBlob(ReminderEntry.Columns.ADDRESSES_INDEX);
+        final byte[] blob =
+            cursor.getBlob(ReminderEntry.Columns.ADDRESSES_INDEX);
         final ReminderEntry entry =
             new ReminderEntry(cursor.getLong(ReminderEntry.Columns.ID_INDEX),
                               cursor.getString(ReminderEntry.Columns.LOCATION_INDEX),
@@ -212,7 +216,8 @@ public final class ReminderProvider extends ContentProvider {
             initialValues.put(ReminderEntry.Columns.TIME,
                               entry.time.toMillis(false));
         if (entry.lastCheck != null)
-            initialValues.put(ReminderEntry.Columns.LASTCHECK, entry.lastCheck.toMillis(false));
+            initialValues.put(ReminderEntry.Columns.LASTCHECK,
+                              entry.lastCheck.toMillis(false));
 
         return initialValues;
     }
