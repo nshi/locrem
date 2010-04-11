@@ -2,6 +2,7 @@ package shi.ning.locrem;
 
 import shi.ning.locrem.ReminderEntry.Columns;
 import android.app.ListActivity;
+import android.app.SearchManager;
 import android.content.ComponentName;
 import android.content.ContentUris;
 import android.content.Context;
@@ -37,6 +38,7 @@ public final class ReminderList extends ListActivity {
 
     private static final int DELETE_ID = Menu.FIRST + 1;
 
+    private String mQueryString;
     LayoutInflater mLayoutFactory;
     ProximityManagerService mPMService = null;
     private final ServiceConnection mPMConnection = new ServiceConnection() {
@@ -140,6 +142,11 @@ public final class ReminderList extends ListActivity {
     }
 
     @Override
+    protected void onNewIntent(Intent intent) {
+        setIntent(intent);
+    }
+
+    @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.main, menu);
@@ -151,6 +158,11 @@ public final class ReminderList extends ListActivity {
         switch (item.getItemId()) {
         case R.id.menu_settings:
             startActivity(new Intent(this, Settings.class));
+            return true;
+        case R.id.menu_show_all:
+            setIntent(getIntent().setAction(Intent.ACTION_MAIN));
+            mQueryString = null;
+            fillData();
             return true;
         }
 
@@ -194,6 +206,16 @@ public final class ReminderList extends ListActivity {
     protected void onResume() {
         super.onResume();
 
+        final Intent intent = getIntent();
+        if (Intent.ACTION_VIEW.equals(intent.getAction())) {
+            editEntry(Long.parseLong(intent.getDataString()), false);
+            finish();
+        } else if (Intent.ACTION_SEARCH.equals(intent.getAction())) {
+            mQueryString = intent.getStringExtra(SearchManager.QUERY);
+        } else {
+            mQueryString = null;
+        }
+
         fillData();
     }
 
@@ -207,7 +229,7 @@ public final class ReminderList extends ListActivity {
     @Override
     protected void onListItemClick(ListView l, View v, int position, long id) {
         super.onListItemClick(l, v, position, id);
-        editEntry(id);
+        editEntry(id, true);
     }
 
     @Override
@@ -234,8 +256,13 @@ public final class ReminderList extends ListActivity {
     }
 
     private void fillData() {
-        final Cursor c = managedQuery(ReminderProvider.CONTENT_URI,
-                                      null, null, null, null);
+        Cursor c = null;
+        if (mQueryString == null)
+            c = managedQuery(ReminderProvider.CONTENT_URI,
+                             null, null, null, null);
+        else
+            c = managedQuery(ReminderProvider.CONTENT_SEARCH_URI,
+                             null, mQueryString, null, null);
 
         if (Log.isLoggable(TAG, Log.VERBOSE))
             Log.v(TAG, c.getCount() + " entries retrieved");
@@ -248,10 +275,13 @@ public final class ReminderList extends ListActivity {
                                ACTIVITY_CREATE);
     }
 
-    private void editEntry(long id) {
+    private void editEntry(long id, boolean waitForResult) {
         Intent intent = new Intent(this, ReminderEdit.class);
         intent.putExtra(Columns._ID, id);
-        startActivityForResult(intent, ACTIVITY_EDIT);
+        if (waitForResult)
+            startActivityForResult(intent, ACTIVITY_EDIT);
+        else
+            startActivity(intent);
     }
 
     private void deleteEntry(long id) {

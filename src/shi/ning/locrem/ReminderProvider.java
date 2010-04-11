@@ -2,12 +2,14 @@ package shi.ning.locrem;
 
 import java.util.LinkedList;
 
+import android.app.SearchManager;
 import android.content.ContentProvider;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.UriMatcher;
 import android.database.Cursor;
+import android.database.MatrixCursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
@@ -19,17 +21,26 @@ import android.util.Log;
 public final class ReminderProvider extends ContentProvider {
     static final String TAG = "ReminderProvider";
     private static final String AUTHORITY = "shi.ning.locrem.reminderprovider";
+    private static final int SUGGEST_ENTRIES = 0;
     private static final int ENTRIES = 1;
-    private static final int ENTRIES_ENABLED = 2;
-    private static final int ENTRIES_DISABLED = 3;
-    private static final int ENTRIES_ID = 4;
-    private static final int ENTRIES_TAGS = 5;
-    private static final int RECENT = 6;
+    private static final int SEARCH_ENTRIES = 2;
+    private static final int ENTRIES_ENABLED = 3;
+    private static final int ENTRIES_DISABLED = 4;
+    private static final int ENTRIES_ID = 5;
+    private static final int ENTRIES_TAGS = 6;
+    private static final int RECENT = 7;
     private static final UriMatcher mUriMatcher =
         new UriMatcher(UriMatcher.NO_MATCH);
 
     static {
+        mUriMatcher.addURI(AUTHORITY, SearchManager.SUGGEST_URI_PATH_QUERY,
+                           SUGGEST_ENTRIES);
+        mUriMatcher.addURI(AUTHORITY,
+                           SearchManager.SUGGEST_URI_PATH_QUERY + "/*",
+                           SUGGEST_ENTRIES);
         mUriMatcher.addURI(AUTHORITY, Database.ENTRIES_TABLE, ENTRIES);
+        mUriMatcher.addURI(AUTHORITY, Database.ENTRIES_TABLE + "/search",
+                           SEARCH_ENTRIES);
         mUriMatcher.addURI(AUTHORITY, Database.ENTRIES_TABLE + "/enabled",
                            ENTRIES_ENABLED);
         mUriMatcher.addURI(AUTHORITY, Database.ENTRIES_TABLE + "/disabled",
@@ -43,6 +54,9 @@ public final class ReminderProvider extends ContentProvider {
 
     public static final Uri CONTENT_URI =
         Uri.parse("content://" + AUTHORITY + "/" + Database.ENTRIES_TABLE);
+    public static final Uri CONTENT_SEARCH_URI =
+        Uri.parse("content://" + AUTHORITY + "/" + Database.ENTRIES_TABLE
+                  + "/search");
     public static final Uri ENABLED_URI =
         Uri.parse("content://" + AUTHORITY + "/" + Database.ENTRIES_TABLE
                   + "/enabled");
@@ -56,6 +70,13 @@ public final class ReminderProvider extends ContentProvider {
         Uri.parse("content://" + AUTHORITY + "/" + Database.RECENT_TABLE);
 
     private Database mDb;
+
+    private static final String[] SuggestColumns = {
+        BaseColumns._ID,
+        SearchManager.SUGGEST_COLUMN_TEXT_1,
+        SearchManager.SUGGEST_COLUMN_TEXT_2,
+        SearchManager.SUGGEST_COLUMN_INTENT_DATA
+    };
 
     public static final class RecentColumns implements BaseColumns {
         public static final String ADDRESS = "address";
@@ -293,10 +314,22 @@ public final class ReminderProvider extends ContentProvider {
         Cursor res = null;
 
         switch (match) {
+        case SUGGEST_ENTRIES:
+            String query = null;
+            if (uri.getPathSegments().size() > 1) {
+                query = uri.getLastPathSegment().toLowerCase();
+            }
+            res = getSuggestions(query);
+            break;
         case ENTRIES:
             res = mDb.query(Database.ENTRIES_TABLE,
                             ReminderEntry.Columns.QUERY_COLUMNS,
                             null);
+            break;
+        case SEARCH_ENTRIES:
+            res = mDb.query(Database.ENTRIES_TABLE,
+                            ReminderEntry.Columns.QUERY_COLUMNS,
+                            buildSearchString(selection));
             break;
         case ENTRIES_ENABLED:
             res = mDb.query(Database.ENTRIES_TABLE,
@@ -363,20 +396,47 @@ public final class ReminderProvider extends ContentProvider {
         if (match != ENTRIES_ID)
             throw new IllegalArgumentException("Cannot delete URI: " + uri);
 
-        int count;
-        if (match == ENTRIES_ID)
-            count =
-                mDb.delete(Database.ENTRIES_TABLE, BaseColumns._ID,
-                           new String[] {uri.getPathSegments().get(1)});
-        else
-            count =
-                mDb.delete(Database.RECENT_TABLE, BaseColumns._ID,
-                           new String[] {uri.getPathSegments().get(1)});
+        final int count =
+            mDb.delete(Database.ENTRIES_TABLE, BaseColumns._ID + " = ?",
+                       new String[] {uri.getPathSegments().get(1)});
 
         if (Log.isLoggable(TAG, Log.DEBUG))
             Log.d(TAG, "deleted " + uri);
         getContext().getContentResolver().notifyChange(uri, null);
 
         return count;
+    }
+
+    private static String buildSearchString(String query) {
+        return ReminderEntry.Columns.LOCATION + " LIKE '%"
+               + query + "%' OR " + ReminderEntry.Columns.NOTE
+               + " LIKE '%" + query + "%' OR "
+               + ReminderEntry.Columns.TAG + " LIKE '%"
+               + query + "%'";
+    }
+
+    private Cursor getSuggestions(String query) {
+        final String processedQuery = query == null ? "" : query;
+        final String selection = buildSearchString(processedQuery);
+        final Cursor c = mDb.query(Database.ENTRIES_TABLE,
+                                   ReminderEntry.Columns.QUERY_COLUMNS,
+                                   selection);
+        final MatrixCursor res = new MatrixCursor(SuggestColumns);
+
+        if (!c.moveToFirst())
+            return res;
+
+        do {
+            final long id = c.getLong(ReminderEntry.Columns.ID_INDEX);
+            final Object[] row =
+                new Object[] {id,
+                              c.getString(ReminderEntry.Columns.NOTE_INDEX),
+                              c.getString(ReminderEntry.Columns.LOCATION_INDEX),
+                              id};
+            res.addRow(row);
+        } while (c.moveToNext());
+
+        c.close();
+        return res;
     }
 }

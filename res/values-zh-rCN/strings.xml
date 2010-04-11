@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">地址提醒</string>
+    <string name="search_description">显示已设定的地址提醒</string>
     <string name="add_entry">添加提醒</string>
     <string name="menu_delete">删除提醒</string>
     <string name="date">日期</string>
@@ -12,6 +13,7 @@
     <string name="save">保存</string>
     <string name="cancel">取消</string>
     <string name="ok">确定</string>
+    <string name="show_all">显示全部</string>
     <string name="settings">设置</string>
     <string name="proximity">距离</string>
     <string name="walking_time">步行时间</string>

@@ -46,9 +46,8 @@ public final class ReminderEdit extends Activity {
             @Override
             public void onDateSet(DatePicker view,
                                   int year, int monthOfYear, int dayOfMonth) {
-                mEntry.time.year = year;
-                mEntry.time.month = monthOfYear;
-                mEntry.time.monthDay = dayOfMonth;
+                mEntry.time.set(dayOfMonth, monthOfYear, year);
+                mEntry.time.normalize(true);
                 updateDateLabel();
             }
         };
