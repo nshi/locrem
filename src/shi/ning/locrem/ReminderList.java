@@ -288,7 +288,9 @@ public final class ReminderList extends ListActivity {
         final Uri uri =
             ContentUris.withAppendedId(ReminderProvider.CONTENT_URI, id);
         if (getContentResolver().delete(uri, null, null) != 1)
-            notify("Failed to delete entry: " + id, Toast.LENGTH_SHORT);
+            notify("Failed to delete entry " + id, Toast.LENGTH_LONG);
+        else
+            notify("Successfully deleted entry " + id, Toast.LENGTH_SHORT);
     }
 
     private void notify(String message, int duration) {

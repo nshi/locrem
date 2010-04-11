@@ -10,6 +10,7 @@ import android.app.TimePickerDialog.OnTimeSetListener;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
+import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
@@ -25,6 +26,7 @@ import android.widget.FilterQueryProvider;
 import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
 import android.widget.TimePicker;
+import android.widget.Toast;
 
 public final class ReminderEdit extends Activity {
     static final String TAG = "ReminderEdit";
@@ -249,6 +251,9 @@ public final class ReminderEdit extends Activity {
         } else {
             getContentResolver().insert(ReminderProvider.CONTENT_URI, values);
         }
+
+        notify("Successfully saved entry \"" + mEntry.note + "\"",
+               Toast.LENGTH_SHORT);
     }
 
     private void updateLocationLabel() {
@@ -262,5 +267,10 @@ public final class ReminderEdit extends Activity {
 
     void updateTimeLabel() {
         mTimeLabel.setText(mEntry.time.format("%I:%M %p"));
+    }
+
+    private void notify(String message, int duration) {
+        Context context = getApplicationContext();
+        Toast.makeText(context, message, duration).show();
     }
 }
