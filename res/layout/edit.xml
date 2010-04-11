@@ -64,7 +64,7 @@
                           android:layout_width="fill_parent"
                           android:layout_height="wrap_content"
                           android:hint="@string/tag"
-                          android:inputType="text"
+                          android:inputType="textShortMessage|textAutoCorrect"
                           android:imeOptions="actionNext" />
 
     <EditText android:id="@+id/note"
@@ -73,6 +73,7 @@
               android:layout_weight="1"
               android:scrollbars="vertical"
               android:hint="@string/note"
+              android:inputType="textShortMessage|textAutoCorrect|textCapSentences|textMultiLine"
               android:imeOptions="actionDone"
               android:gravity="top" />
 

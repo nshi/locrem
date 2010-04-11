@@ -20,7 +20,8 @@
             <meta-data android:name="android.app.searchable"
                        android:resource="@xml/searchable" />
         </activity>
-        <activity android:name=".ReminderEdit" />
+        <activity android:name=".ReminderEdit"
+                  android:windowSoftInputMode="adjustPan" />
         <activity android:name=".EditLocation" />
         <activity android:name=".Settings" />
 
