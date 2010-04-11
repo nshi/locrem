@@ -64,7 +64,7 @@
                           android:layout_width="fill_parent"
                           android:layout_height="wrap_content"
                           android:hint="@string/tag"
-                          android:inputType="textShortMessage|textAutoCorrect"
+                          android:inputType="text|textAutoCorrect"
                           android:imeOptions="actionNext" />
 
     <EditText android:id="@+id/note"
