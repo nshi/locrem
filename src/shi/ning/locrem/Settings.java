@@ -5,6 +5,7 @@ import java.text.DecimalFormat;
 import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.res.Resources;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.util.Log;
@@ -60,6 +61,7 @@ public final class Settings extends Activity {
             public void onProgressChanged(SeekBar seekBar, int progress,
                                           boolean fromUser) {
                 final double walkingTime = progress / WALKING_SPEED; // seconds
+                final Resources resources = getResources();
                 final DecimalFormat formatter = new DecimalFormat("#.#");
                 mRange = progress;
 
@@ -68,17 +70,18 @@ public final class Settings extends Activity {
                           + " by " + (fromUser ? "user" : "program"));
 
                 if (progress < 500)
-                    mDistanceLabel.setHint(progress + " m");
+                    mDistanceLabel.setHint(Integer.toString(progress)
+                                           + resources.getText(R.string.distance_unit_m));
                 else
                     mDistanceLabel.setHint(formatter.format(progress / 1000.0)
-                                           + " km");
+                                           + resources.getText(R.string.distance_unit_km));
 
                 if (walkingTime < 60.0)
                     mWalkingLabel.setHint(formatter.format(walkingTime)
-                                          + " secs");
+                                          + resources.getText(R.string.time_unit_sec));
                 else
                     mWalkingLabel.setHint(formatter.format(walkingTime / 60.0)
-                                          + " mins");
+                                          + resources.getText(R.string.time_unit_min));
             }
         });
 

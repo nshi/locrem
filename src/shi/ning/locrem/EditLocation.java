@@ -282,7 +282,7 @@ public final class EditLocation extends MapActivity {
 
         mAlertBuilder.setMessage(resources.getString(messageId))
                      .setCancelable(false)
-                     .setPositiveButton(resources.getString(R.string.ok), null);
+                     .setPositiveButton(resources.getText(R.string.ok), null);
         return mAlertBuilder.create();
     }
 

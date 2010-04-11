@@ -254,8 +254,6 @@ public final class ReminderEdit extends Activity {
     private void updateLocationLabel() {
         if (mEntry.location.length() > 0)
             mLocationLabel.setText(mEntry.location);
-        else
-            mLocationLabel.setText(R.string.location);
     }
 
     void updateDateLabel() {
