@@ -6,7 +6,7 @@
     <string name="menu_delete">Delete</string>
     <string name="date">Date</string>
     <string name="time">Time</string>
-    <string name="location">Location</string>
+    <string name="add_location">Add Address</string>
     <string name="address">Address</string>
     <string name="tag">Tag</string>
     <string name="note">Note</string>

@@ -14,7 +14,7 @@
               android:gravity="center"
               android:textAppearance="?android:attr/textAppearanceLarge"
               android:ellipsize="marquee"
-              android:hint="@string/location" />
+              android:hint="@string/add_location" />
     <ImageView android:layout_width="fill_parent"
                android:layout_height="wrap_content"
                android:scaleType="fitXY"
