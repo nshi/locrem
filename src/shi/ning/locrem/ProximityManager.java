@@ -246,6 +246,8 @@ public final class ProximityManager extends Service {
             final Address current =
                 locationToAddress(mManager.getLastKnownLocation(mProvider));
             checkEntry(entry, now, current);
+        } else {
+            cursor.close();
         }
     }
 
