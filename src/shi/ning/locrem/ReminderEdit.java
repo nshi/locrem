@@ -12,6 +12,7 @@ import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
@@ -238,6 +239,7 @@ public final class ReminderEdit extends Activity {
     }
 
     void saveEntry() {
+        final Resources resources = getResources();
         mEntry.tag = mTag.getText().toString();
         mEntry.note = mNote.getText().toString();
         final ContentValues values = ReminderProvider.packEntryToValues(mEntry);
@@ -252,8 +254,8 @@ public final class ReminderEdit extends Activity {
             getContentResolver().insert(ReminderProvider.CONTENT_URI, values);
         }
 
-        notify("Successfully saved entry \"" + mEntry.note + "\"",
-               Toast.LENGTH_SHORT);
+        notify(String.format(resources.getString(R.string.save_succeeded),
+                             mEntry.note), Toast.LENGTH_SHORT);
     }
 
     private void updateLocationLabel() {

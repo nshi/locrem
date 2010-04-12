@@ -46,7 +46,7 @@ public final class Settings extends Activity {
                     if (Log.isLoggable(TAG, Log.WARN))
                         Log.w(TAG, "failed to save settings");
 
-                    Settings.this.notify("failed to save settings",
+                    Settings.this.notify(getResources().getString(R.string.save_settings_failed),
                                          Toast.LENGTH_LONG);
                 }
 

@@ -8,6 +8,7 @@ import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.res.Resources;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
@@ -285,12 +286,15 @@ public final class ReminderList extends ListActivity {
     }
 
     private void deleteEntry(long id) {
+        final Resources resources = getResources();
         final Uri uri =
             ContentUris.withAppendedId(ReminderProvider.CONTENT_URI, id);
         if (getContentResolver().delete(uri, null, null) != 1)
-            notify("Failed to delete entry " + id, Toast.LENGTH_LONG);
+            notify(String.format(resources.getString(R.string.deletion_failed),
+                                 id), Toast.LENGTH_LONG);
         else
-            notify("Successfully deleted entry " + id, Toast.LENGTH_SHORT);
+            notify(String.format(resources.getString(R.string.deletion_succeeded),
+                                 id), Toast.LENGTH_SHORT);
     }
 
     private void notify(String message, int duration) {

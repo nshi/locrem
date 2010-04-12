@@ -23,4 +23,9 @@
     <string name="time_unit_min"> mins</string>
     <string name="network_unavailable">Network unavailable</string>
     <string name="address_not_found">Address cannot be located</string>
+
+    <string name="deletion_failed">Failed to delete entry %s</string>
+    <string name="deletion_succeeded">Successfully deleted entry %s</string>
+    <string name="save_succeeded">Successfully saved entry "%s"</string>
+    <string name="save_settings_failed">Failed to save settings</string>
 </resources>
