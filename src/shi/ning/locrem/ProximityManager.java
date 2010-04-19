@@ -106,6 +106,8 @@ public final class ProximityManager extends Service {
             final Time now = new Time();
             now.setToNow();
 
+            if (Log.isLoggable(TAG, Log.VERBOSE))
+                Log.v(TAG, "currently at " + currentAddress.toString());
             checkAllEntry(now, currentAddress);
         }
     }
@@ -369,7 +371,8 @@ public final class ProximityManager extends Service {
 
                 if (distance[0] <= mRange) {
                     if (Log.isLoggable(TAG, Log.VERBOSE))
-                        Log.v(TAG, "coordinates close to " + test.toString());
+                        Log.v(TAG, "coordinates within " + distance[0]
+                              + " meters range to " + test.toString());
                     return true;
                 }
         }

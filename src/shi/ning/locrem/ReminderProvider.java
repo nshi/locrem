@@ -423,8 +423,10 @@ public final class ReminderProvider extends ContentProvider {
                                    selection);
         final MatrixCursor res = new MatrixCursor(SuggestColumns);
 
-        if (!c.moveToFirst())
+        if (!c.moveToFirst()) {
+            c.close();
             return res;
+        }
 
         do {
             final long id = c.getLong(ReminderEntry.Columns.ID_INDEX);

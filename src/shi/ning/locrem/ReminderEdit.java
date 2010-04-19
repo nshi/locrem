@@ -254,10 +254,12 @@ public final class ReminderEdit extends Activity {
                     Log.d(TAG, "successfully updated entry " + mEntry.id);
             }
         } else {
-            getContentResolver().insert(ReminderProvider.CONTENT_URI, values);
+            final Uri uri =
+                getContentResolver().insert(ReminderProvider.CONTENT_URI,
+                                            values);
 
             if (Log.isLoggable(TAG, Log.VERBOSE))
-                Log.d(TAG, "successfully inserted entry " + mEntry.id);
+                Log.d(TAG, "successfully inserted entry " + uri);
         }
 
         notify(String.format(resources.getString(R.string.save_succeeded),
