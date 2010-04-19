@@ -45,6 +45,7 @@ public final class EditLocation extends MapActivity {
     private static final int DIALOG_NONE = -1;
     private static final int DIALOG_NETWORK_UNAVAILABLE = 0;
     private static final int DIALOG_NOT_FOUND = 1;
+    private static final int DIALOG_INVALID_ADDRESS = 2;
 
     Geocoder mGeo;
     private MapView mMapView;
@@ -222,6 +223,11 @@ public final class EditLocation extends MapActivity {
         save.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
+                if (!checkForm()) {
+                    showDialog(DIALOG_INVALID_ADDRESS);
+                    return;
+                }
+
                 Intent intent = new Intent();
                 intent.putExtra(ReminderEntry.Columns.LOCATION,
                                 mLocation.getText().toString());
@@ -276,11 +282,14 @@ public final class EditLocation extends MapActivity {
         case DIALOG_NOT_FOUND:
             messageId = R.string.address_not_found;
             break;
+        case DIALOG_INVALID_ADDRESS:
+            messageId = R.string.address_invalid;
+            break;
         default:
             return null;
         }
 
-        mAlertBuilder.setMessage(resources.getString(messageId))
+        mAlertBuilder.setMessage(resources.getText(messageId))
                      .setCancelable(false)
                      .setPositiveButton(resources.getText(R.string.ok), null);
         return mAlertBuilder.create();
@@ -323,5 +332,12 @@ public final class EditLocation extends MapActivity {
         mMapController.animateTo(mItemizedOverlay.getCenter());
         if (zoom)
             mMapController.setZoom(16);
+    }
+
+    private boolean checkForm() {
+        if (mLocation.getText().length() == 0
+            || mAddresses == null || mAddresses.size() == 0)
+            return false;
+        return true;
     }
 }

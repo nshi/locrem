@@ -2,6 +2,7 @@ package shi.ning.locrem;
 
 import shi.ning.locrem.ReminderEntry.Columns;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.app.Dialog;
 import android.app.TimePickerDialog;
@@ -34,6 +35,7 @@ public final class ReminderEdit extends Activity {
     private static final int ACTIVITY_LOCATION = 0;
     private static final int DIALOG_DATE = 1;
     private static final int DIALOG_TIME = 2;
+    private static final int DIALOG_INCOMPLETE_FORM = 3;
 
     private long mId;
     ReminderEntry mEntry;
@@ -43,6 +45,7 @@ public final class ReminderEdit extends Activity {
     private TextView mTimeLabel;
     private AutoCompleteTextView mTag;
     private EditText mNote;
+    private AlertDialog.Builder mAlertBuilder;
 
     private final OnDateSetListener mDateSetListener =
         new OnDateSetListener() {
@@ -134,6 +137,11 @@ public final class ReminderEdit extends Activity {
         save.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
+                if (!checkForm()) {
+                    showDialog(DIALOG_INCOMPLETE_FORM);
+                    return;
+                }
+
                 Intent intent = new Intent();
                 intent.putExtra(Columns._ID, mId);
                 saveEntry();
@@ -149,6 +157,8 @@ public final class ReminderEdit extends Activity {
                 finish();
             }
         });
+
+        mAlertBuilder = new AlertDialog.Builder(this);
 
         // Set auto complete for the tags
         final Cursor c = managedQuery(ReminderProvider.TAGS_URI,
@@ -168,6 +178,9 @@ public final class ReminderEdit extends Activity {
 
     @Override
     protected Dialog onCreateDialog(int id) {
+        final Resources resources = getResources();
+        int messageId = 0;
+
         switch (id) {
         case DIALOG_DATE:
             return new DatePickerDialog(this,
@@ -181,9 +194,15 @@ public final class ReminderEdit extends Activity {
                                         mEntry.time.hour,
                                         mEntry.time.minute,
                                         false);
+        case DIALOG_INCOMPLETE_FORM:
+            messageId = R.string.incomplete_form;
+            break;
         }
 
-        return null;
+        mAlertBuilder.setMessage(resources.getText(messageId))
+                     .setCancelable(false)
+                     .setPositiveButton(resources.getText(R.string.ok), null);
+        return mAlertBuilder.create();
     }
 
     @Override
@@ -277,6 +296,15 @@ public final class ReminderEdit extends Activity {
 
     void updateTimeLabel() {
         mTimeLabel.setText(mEntry.time.format("%I:%M %p"));
+    }
+
+    private boolean checkForm() {
+        if (mNote.getText().length() == 0
+            || mEntry.location == null
+            || mEntry.addresses == null
+            || mEntry.addresses.size() == 0)
+            return false;
+        return true;
     }
 
     private void notify(String message, int duration) {

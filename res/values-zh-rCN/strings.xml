@@ -23,6 +23,12 @@
     <string name="time_unit_min">分钟</string>
     <string name="network_unavailable">无网络连接</string>
     <string name="address_not_found">无法定位地址</string>
+    <string name="address_invalid">
+        请输入正确的地址并确定该地址已在地图上标记
+    </string>
+    <string name="incomplete_form">
+        请确定已输入正确的地址和提示内容
+    </string>
 
     <string name="deletion_failed">无法删除提醒%s</string>
     <string name="deletion_succeeded">成功删除提醒%s</string>

@@ -23,6 +23,12 @@
     <string name="time_unit_min"> mins</string>
     <string name="network_unavailable">Network unavailable</string>
     <string name="address_not_found">Address cannot be located</string>
+    <string name="address_invalid">
+        Please enter a valid address and make sure it is marked on the map
+    </string>
+    <string name="incomplete_form">
+        Please make sure you have entered a valid address and note
+    </string>
 
     <string name="deletion_failed">Failed to delete entry %s</string>
     <string name="deletion_succeeded">Successfully deleted entry %s</string>
