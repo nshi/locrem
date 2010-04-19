@@ -25,6 +25,7 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.location.LocationProvider;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.RemoteException;
@@ -58,7 +59,7 @@ public final class ProximityManager extends Service {
     String mProvider;
     private Context mContext;
     private Geocoder mGeocoder;
-    private LocationManager mManager;
+    LocationManager mManager;
     private ProximityListener mListener;
     private ProximityListener mSecondaryListener;
     int mRange;
@@ -106,6 +107,29 @@ public final class ProximityManager extends Service {
             now.setToNow();
 
             checkAllEntry(now, currentAddress);
+        }
+    }
+
+    private final class GeocodeTask
+    extends AsyncTask<Void, Void, Address> {
+        private final ReminderEntry mEntry;
+
+        public GeocodeTask(final ReminderEntry entry) {
+            mEntry = entry;
+        }
+
+        @Override
+        protected Address doInBackground(Void... params) {
+            if (Log.isLoggable(TAG, Log.VERBOSE))
+                Log.v(TAG, "looking up current address");
+            return locationToAddress(mManager.getLastKnownLocation(mProvider));
+        }
+
+        @Override
+        protected void onPostExecute(Address current) {
+            final Time now = new Time();
+            now.setToNow();
+            checkEntry(mEntry, now, current);
         }
     }
 
@@ -231,8 +255,6 @@ public final class ProximityManager extends Service {
         if (cursor.moveToFirst()) {
             final ReminderEntry entry = ReminderProvider.cursorToEntry(cursor);
             cursor.close();
-            final Time now = new Time();
-            now.setToNow();
 
             if (!entry.enabled)
                 return;
@@ -243,9 +265,7 @@ public final class ProximityManager extends Service {
                 return;
             }
 
-            final Address current =
-                locationToAddress(mManager.getLastKnownLocation(mProvider));
-            checkEntry(entry, now, current);
+            new GeocodeTask(entry).execute();
         } else {
             cursor.close();
         }
@@ -268,11 +288,11 @@ public final class ProximityManager extends Service {
         }
     }
 
-    private void checkEntry(ReminderEntry entry, Time now, Address current) {
+    void checkEntry(ReminderEntry entry, Time now, Address current) {
         if (entry == null)
             return;
 
-        if (entry.time.after(now)) {
+        if (entry.time != null && entry.time.after(now)) {
             if (Log.isLoggable(TAG, Log.VERBOSE))
                 Log.v(TAG, "entry " + entry.id + " is scheduled to run after "
                       + entry.time.format("%F %T"));

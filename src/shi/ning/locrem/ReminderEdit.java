@@ -249,9 +249,15 @@ public final class ReminderEdit extends Activity {
             if (getContentResolver().update(uri, values, null, null) != 1) {
                 if (Log.isLoggable(TAG, Log.DEBUG))
                     Log.d(TAG, "failed to save entry " + mEntry.id);
+            } else {
+                if (Log.isLoggable(TAG, Log.VERBOSE))
+                    Log.d(TAG, "successfully updated entry " + mEntry.id);
             }
         } else {
             getContentResolver().insert(ReminderProvider.CONTENT_URI, values);
+
+            if (Log.isLoggable(TAG, Log.VERBOSE))
+                Log.d(TAG, "successfully inserted entry " + mEntry.id);
         }
 
         notify(String.format(resources.getString(R.string.save_succeeded),
