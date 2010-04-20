@@ -142,7 +142,7 @@ implements ServiceConnection {
                                 addresses =
                                     ReminderEntry.deserializeAddresses(currentLocation);
                             } catch (RemoteException e) {}
-                            if (!addresses.isEmpty())
+                            if (addresses != null && !addresses.isEmpty())
                                 mCurrent = addresses.get(0);
                         }
                     }

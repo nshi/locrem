@@ -59,8 +59,14 @@ implements OnSharedPreferenceChangeListener {
         @Override
         public byte[] getCurrentLocation() throws RemoteException {
             final LinkedList<Address> addresses = new LinkedList<Address>();
-            addresses.add(locationToAddress(mManager.getLastKnownLocation(mProvider)));
-            return ReminderEntry.serializeAddresses(addresses);
+            final Address a =
+                locationToAddress(mManager.getLastKnownLocation(mProvider));
+            if (a != null) {
+                addresses.add(a);
+                return ReminderEntry.serializeAddresses(addresses);
+            } else {
+                return null;
+            }
         }
     };
 

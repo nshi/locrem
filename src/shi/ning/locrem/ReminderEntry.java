@@ -146,6 +146,9 @@ public final class ReminderEntry implements Serializable {
     }
 
     public static List<Address> deserializeAddresses(byte[] buffer) {
+        if (buffer == null)
+            return null;
+
         final LinkedList<Address> addresses = new LinkedList<Address>();
         final ByteArrayInputStream buf = new ByteArrayInputStream(buffer);
         final DataInputStream in = new DataInputStream(buf);

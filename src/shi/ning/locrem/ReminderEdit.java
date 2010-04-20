@@ -52,7 +52,10 @@ public final class ReminderEdit extends Activity {
             @Override
             public void onDateSet(DatePicker view,
                                   int year, int monthOfYear, int dayOfMonth) {
-                mEntry.time.set(dayOfMonth, monthOfYear, year);
+                mEntry.time.set(0,
+                                mEntry.time.minute,
+                                mEntry.time.hour,
+                                dayOfMonth, monthOfYear, year);
                 mEntry.time.normalize(true);
                 updateDateLabel();
             }
@@ -61,8 +64,11 @@ public final class ReminderEdit extends Activity {
         new OnTimeSetListener() {
             @Override
             public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
-                mEntry.time.hour = hourOfDay;
-                mEntry.time.minute = minute;
+                mEntry.time.set(0, minute, hourOfDay,
+                                mEntry.time.monthDay,
+                                mEntry.time.month,
+                                mEntry.time.year);
+                mEntry.time.normalize(true);
                 updateTimeLabel();
             }
         };
