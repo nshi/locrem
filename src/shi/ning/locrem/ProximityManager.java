@@ -33,7 +33,8 @@ import android.preference.PreferenceManager;
 import android.text.format.Time;
 import android.util.Log;
 
-public final class ProximityManager extends Service {
+public final class ProximityManager extends Service
+implements OnSharedPreferenceChangeListener {
     static final String TAG = "ProximityManager";
 
     private static final int SERVICE_ALARM = 0;
@@ -54,6 +55,13 @@ public final class ProximityManager extends Service {
 
             ProximityManager.this.onEntryChanged(id);
         }
+
+        @Override
+        public byte[] getCurrentLocation() throws RemoteException {
+            final LinkedList<Address> addresses = new LinkedList<Address>();
+            addresses.add(locationToAddress(mManager.getLastKnownLocation(mProvider)));
+            return ReminderEntry.serializeAddresses(addresses);
+        }
     };
 
     String mProvider;
@@ -62,6 +70,7 @@ public final class ProximityManager extends Service {
     LocationManager mManager;
     private ProximityListener mListener;
     private ProximityListener mSecondaryListener;
+    private SharedPreferences mSettings;
     int mRange;
 
     private final class ProximityListener implements LocationListener {
@@ -145,18 +154,10 @@ public final class ProximityManager extends Service {
         mListener = new ProximityListener();
         mSecondaryListener = new ProximityListener();
 
-        final SharedPreferences settings =
-            PreferenceManager.getDefaultSharedPreferences(mContext);
-        settings.registerOnSharedPreferenceChangeListener(new OnSharedPreferenceChangeListener() {
-            @Override
-            public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
-                                                  String key) {
-                mRange = settings.getInt(key, Settings.DEFAULT_RANGE);
-                if (Log.isLoggable(TAG, Log.DEBUG))
-                    Log.d(TAG, key + " value changed to " + mRange);
-            }
-        });
-        mRange = settings.getInt(Settings.KEY_RANGE, Settings.DEFAULT_RANGE);
+        mSettings =
+            PreferenceManager.getDefaultSharedPreferences(getApplication());
+        mSettings.registerOnSharedPreferenceChangeListener(this);
+        mRange = mSettings.getInt(Settings.KEY_RANGE, Settings.DEFAULT_RANGE);
         if (Log.isLoggable(TAG, Log.VERBOSE))
             Log.v(TAG, "range settings is " + mRange);
 
@@ -189,6 +190,13 @@ public final class ProximityManager extends Service {
         }
 
         return START_STICKY;
+    }
+
+    @Override
+    public void onDestroy() {
+        if (Log.isLoggable(TAG, Log.VERBOSE))
+            Log.v(TAG, "destroyed");
+        mSettings.unregisterOnSharedPreferenceChangeListener(this);
     }
 
     public Address locationToAddress(Location location) {
@@ -246,6 +254,14 @@ public final class ProximityManager extends Service {
             if (Log.isLoggable(TAG, Log.DEBUG))
                 Log.d(TAG, "no location provider available");
         }
+    }
+
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
+                                          String key) {
+        mRange = mSettings.getInt(key, Settings.DEFAULT_RANGE);
+        if (Log.isLoggable(TAG, Log.DEBUG))
+            Log.d(TAG, key + " value changed to " + mRange);
     }
 
     void onEntryChanged(long id) {

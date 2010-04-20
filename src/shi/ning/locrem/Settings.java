@@ -86,7 +86,7 @@ public final class Settings extends Activity {
         });
 
         mSettings =
-            PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+            PreferenceManager.getDefaultSharedPreferences(getApplication());
 
         if (Log.isLoggable(TAG, Log.VERBOSE))
             Log.v(TAG, "created");

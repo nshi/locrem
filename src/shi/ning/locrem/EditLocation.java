@@ -6,9 +6,11 @@ import java.util.List;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.content.ComponentName;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.res.Resources;
 import android.database.Cursor;
 import android.graphics.drawable.Drawable;
@@ -16,6 +18,8 @@ import android.location.Address;
 import android.location.Geocoder;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.IBinder;
+import android.os.RemoteException;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
@@ -40,8 +44,10 @@ import com.google.android.maps.MapView;
 import com.google.android.maps.Overlay;
 import com.google.android.maps.OverlayItem;
 
-public final class EditLocation extends MapActivity {
+public final class EditLocation extends MapActivity
+implements ServiceConnection {
     static final String TAG = "EditLocation";
+    private static final int SHOW_CURRENT = -2;
     private static final int DIALOG_NONE = -1;
     private static final int DIALOG_NETWORK_UNAVAILABLE = 0;
     private static final int DIALOG_NOT_FOUND = 1;
@@ -54,6 +60,7 @@ public final class EditLocation extends MapActivity {
     AutoCompleteTextView mLocation;
     private LocationOverlay mItemizedOverlay;
     private AlertDialog.Builder mAlertBuilder;
+    private ProximityManagerService mPMService;
     List<Address> mAddresses;
 
     private static final class LocationOverlay
@@ -87,29 +94,72 @@ public final class EditLocation extends MapActivity {
     }
 
     private final class GeocodeTask extends AsyncTask<Object, Void, Integer> {
+        public static final int TYPE_ADDRESS = 0;
+        public static final int TYPE_COORDINATES = 1;
+        public static final int TYPE_CURRENT = 2;
+
+        private final int mType;
+        private Address mCurrent;
+
+        public GeocodeTask(int type) {
+            mType = type;
+            mCurrent = null;
+        }
+
         @Override
         protected Integer doInBackground(Object... params) {
-            final boolean isAddress = (Boolean) params[0];
+            List<Address> addresses = null;
+            try {
+                switch (mType) {
+                case TYPE_ADDRESS:
+                    addresses = mGeo.getFromLocationName((String) params[0],
+                                                         1);
+                    break;
+                case TYPE_COORDINATES:
+                    addresses = mGeo.getFromLocation((Double) params[0],
+                                                     (Double) params[1],
+                                                     1);
+                    break;
+                case TYPE_CURRENT:
+                    // Let's spin until mPMService is ready
+                    int count = 5;
+                    while (count-- > 0) {
+                        synchronized (EditLocation.this) {
+                            if (mPMService != null)
+                                break;
+                        }
+                        Thread.sleep(500);
+                    }
+
+                    synchronized (EditLocation.this) {
+                        if (mPMService != null) {
+                            if (Log.isLoggable(TAG, Log.VERBOSE))
+                                Log.v(TAG, "finding current location");
+
+                            try {
+                                final byte[] currentLocation =
+                                    mPMService.getCurrentLocation();
+                                addresses =
+                                    ReminderEntry.deserializeAddresses(currentLocation);
+                            } catch (RemoteException e) {}
+                            if (!addresses.isEmpty())
+                                mCurrent = addresses.get(0);
+                        }
+                    }
+                    return SHOW_CURRENT;
+                }
+            } catch (IOException e) {
+                return DIALOG_NETWORK_UNAVAILABLE;
+            } catch (InterruptedException e) {}
 
             synchronized (EditLocation.this) {
-                try {
-                    if (isAddress)
-                        mAddresses = mGeo.getFromLocationName((String) params[1],
-                                                              1);
-                    else
-                        mAddresses = mGeo.getFromLocation((Double) params[1],
-                                                          (Double) params[2],
-                                                          1);
-                } catch (IOException e) {
-                    return DIALOG_NETWORK_UNAVAILABLE;
-                }
-
+                mAddresses = addresses;
                 if (mAddresses == null || mAddresses.size() == 0) {
                     return DIALOG_NOT_FOUND;
                 }
             }
 
-            if (!isAddress)
+            if (mType == TYPE_COORDINATES)
                 publishProgress((Void) null);
 
             return DIALOG_NONE;
@@ -132,6 +182,13 @@ public final class EditLocation extends MapActivity {
                                             values);
 
                 updateMap(true);
+                break;
+            case SHOW_CURRENT:
+                if (mCurrent != null) {
+                    if (Log.isLoggable(TAG, Log.VERBOSE))
+                        Log.v(TAG, "showing current location");
+                    centerMap(addressToGeoPoint(mCurrent), true);
+                }
                 break;
             default:
                 showDialog(result);
@@ -192,7 +249,7 @@ public final class EditLocation extends MapActivity {
                     Log.v(TAG, "selected from drop down menu: " + address);
                 ime.hideSoftInputFromWindow(arg1.getApplicationWindowToken(),
                                             0);
-                new GeocodeTask().execute(true, address);
+                new GeocodeTask(GeocodeTask.TYPE_ADDRESS).execute(address);
             }
         });
         mLocation.setOnEditorActionListener(new OnEditorActionListener() {
@@ -203,7 +260,8 @@ public final class EditLocation extends MapActivity {
                     return false;
                 ime.hideSoftInputFromWindow(v.getWindowToken(), 0);
                 ((AutoCompleteTextView) v).dismissDropDown();
-                new GeocodeTask().execute(true, v.getText().toString());
+                new GeocodeTask(GeocodeTask.TYPE_ADDRESS)
+                        .execute(v.getText().toString());
                 return true;
             }
         });
@@ -212,8 +270,9 @@ public final class EditLocation extends MapActivity {
         final Overlay tapOverlay = new Overlay() {
             @Override
             public boolean onTap(GeoPoint p, MapView mapView) {
-                new GeocodeTask().execute(false, p.getLatitudeE6() / 1E6,
-                                          p.getLongitudeE6() / 1E6);
+                new GeocodeTask(GeocodeTask.TYPE_COORDINATES)
+                        .execute(p.getLatitudeE6() / 1E6,
+                                 p.getLongitudeE6() / 1E6);
                 return true;
             }
         };
@@ -268,6 +327,19 @@ public final class EditLocation extends MapActivity {
         recent.setFilterQueryProvider(new RecentFilter(getContentResolver()));
         recent.setCursorToStringConverter(new RecentCursorToString());
         mLocation.setAdapter(recent);
+
+        final Intent intent = new Intent(this, ProximityManager.class);
+        bindService(intent, this, 0);
+
+        // Set to the current location
+        new GeocodeTask(GeocodeTask.TYPE_CURRENT).execute();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        unbindService(this);
     }
 
     @Override
@@ -323,21 +395,45 @@ public final class EditLocation extends MapActivity {
         final int length = mAddresses.size();
         for (int i = 0; i < length; i++) {
             final Address a = mAddresses.get(i);
-            final GeoPoint point = new GeoPoint((int) (a.getLatitude() * 1E6),
-                                                (int) (a.getLongitude() * 1E6));
+            final GeoPoint point = addressToGeoPoint(a);
             final OverlayItem item = new OverlayItem(point, "", "");
             mItemizedOverlay.addItem(item);
         }
         mMapOverlays.add(mItemizedOverlay);
-        mMapController.animateTo(mItemizedOverlay.getCenter());
+        centerMap(mItemizedOverlay.getCenter(), zoom);
+    }
+
+    void centerMap(GeoPoint center, boolean zoom) {
+        mMapController.animateTo(center);
         if (zoom)
             mMapController.setZoom(16);
     }
 
+    GeoPoint addressToGeoPoint(final Address a) {
+        return new GeoPoint((int) (a.getLatitude() * 1E6),
+                            (int) (a.getLongitude() * 1E6));
+    }
+
     private boolean checkForm() {
-        if (mLocation.getText().length() == 0
-            || mAddresses == null || mAddresses.size() == 0)
-            return false;
-        return true;
+        synchronized (this) {
+            if (mLocation.getText().length() == 0
+                || mAddresses == null || mAddresses.size() == 0)
+                return false;
+            return true;
+        }
+    }
+
+    @Override
+    public void onServiceConnected(ComponentName name, IBinder service) {
+        synchronized (this) {
+            mPMService = ProximityManagerService.Stub.asInterface(service);
+        }
+    }
+
+    @Override
+    public void onServiceDisconnected(ComponentName name) {
+        synchronized (this) {
+            mPMService = null;
+        }
     }
 }

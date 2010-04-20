@@ -31,7 +31,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 
-public final class ReminderList extends ListActivity {
+public final class ReminderList extends ListActivity
+implements ServiceConnection {
     static final String TAG = "ReminderList";
 
     private static final int ACTIVITY_CREATE = 0;
@@ -41,18 +42,7 @@ public final class ReminderList extends ListActivity {
 
     private String mQueryString;
     LayoutInflater mLayoutFactory;
-    ProximityManagerService mPMService = null;
-    private final ServiceConnection mPMConnection = new ServiceConnection() {
-        @Override
-        public void onServiceDisconnected(ComponentName name) {
-            mPMService = null;
-        }
-
-        @Override
-        public void onServiceConnected(ComponentName name, IBinder service) {
-            mPMService = ProximityManagerService.Stub.asInterface(service);
-        }
-    };
+    private ProximityManagerService mPMService = null;
 
     private class EntryCursorAdapter extends CursorAdapter {
         public EntryCursorAdapter(Context context, Cursor c) {
@@ -192,6 +182,16 @@ public final class ReminderList extends ListActivity {
     }
 
     @Override
+    public void onServiceDisconnected(ComponentName name) {
+        mPMService = null;
+    }
+
+    @Override
+    public void onServiceConnected(ComponentName name, IBinder service) {
+        mPMService = ProximityManagerService.Stub.asInterface(service);
+    }
+
+    @Override
     protected void onStart() {
         super.onStart();
 
@@ -200,7 +200,7 @@ public final class ReminderList extends ListActivity {
 
         final Intent intent = new Intent(this, ProximityManager.class);
         startService(intent);
-        bindService(intent, mPMConnection, 0);
+        bindService(intent, this, 0);
     }
 
     @Override
@@ -224,7 +224,7 @@ public final class ReminderList extends ListActivity {
     protected void onStop() {
         super.onStop();
 
-        unbindService(mPMConnection);
+        unbindService(this);
     }
 
     @Override
