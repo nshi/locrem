@@ -287,8 +287,8 @@ public final class ReminderEdit extends Activity {
                 Log.d(TAG, "successfully inserted entry " + uri);
         }
 
-        notify(String.format(resources.getString(R.string.save_succeeded),
-                             mEntry.note), Toast.LENGTH_SHORT);
+        notify(resources.getString(R.string.save_succeeded, mEntry.note),
+               Toast.LENGTH_SHORT);
     }
 
     private void updateLocationLabel() {

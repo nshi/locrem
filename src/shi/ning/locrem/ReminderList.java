@@ -290,11 +290,11 @@ implements ServiceConnection {
         final Uri uri =
             ContentUris.withAppendedId(ReminderProvider.CONTENT_URI, id);
         if (getContentResolver().delete(uri, null, null) != 1)
-            notify(String.format(resources.getString(R.string.deletion_failed),
-                                 id), Toast.LENGTH_LONG);
+            notify(resources.getString(R.string.deletion_failed, id),
+                   Toast.LENGTH_LONG);
         else
-            notify(String.format(resources.getString(R.string.deletion_succeeded),
-                                 id), Toast.LENGTH_SHORT);
+            notify(resources.getString(R.string.deletion_succeeded, id),
+                   Toast.LENGTH_SHORT);
     }
 
     private void notify(String message, int duration) {

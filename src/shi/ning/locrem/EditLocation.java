@@ -9,6 +9,7 @@ import android.app.Dialog;
 import android.content.ComponentName;
 import android.content.ContentResolver;
 import android.content.ContentValues;
+import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.res.Resources;
@@ -33,6 +34,7 @@ import android.widget.EditText;
 import android.widget.FilterQueryProvider;
 import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
+import android.widget.Toast;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.TextView.OnEditorActionListener;
 
@@ -98,10 +100,12 @@ implements ServiceConnection {
         public static final int TYPE_COORDINATES = 1;
         public static final int TYPE_CURRENT = 2;
 
+        private final Resources mResources;
         private final int mType;
         private Address mCurrent;
 
         public GeocodeTask(int type) {
+            mResources = getResources();
             mType = type;
             mCurrent = null;
         }
@@ -121,6 +125,8 @@ implements ServiceConnection {
                                                      1);
                     break;
                 case TYPE_CURRENT:
+                    publishProgress((Void) null);
+
                     // Let's spin until mPMService is ready
                     int count = 5;
                     while (count-- > 0) {
@@ -167,7 +173,11 @@ implements ServiceConnection {
 
         @Override
         protected void onProgressUpdate(Void... values) {
-            updateAddress(mLocation);
+            if (mType == TYPE_CURRENT)
+                EditLocation.this.notify(mResources.getString(R.string.finding_current_location),
+                                         Toast.LENGTH_SHORT);
+            else
+                updateAddress(mLocation);
         }
 
         @Override
@@ -188,6 +198,9 @@ implements ServiceConnection {
                     if (Log.isLoggable(TAG, Log.VERBOSE))
                         Log.v(TAG, "showing current location");
                     centerMap(addressToGeoPoint(mCurrent), true);
+                } else {
+                    EditLocation.this.notify(mResources.getString(R.string.current_location_not_found),
+                                             Toast.LENGTH_SHORT);
                 }
                 break;
             default:
@@ -435,5 +448,10 @@ implements ServiceConnection {
         synchronized (this) {
             mPMService = null;
         }
+    }
+
+    void notify(String message, int duration) {
+        Context context = getApplicationContext();
+        Toast.makeText(context, message, duration).show();
     }
 }
