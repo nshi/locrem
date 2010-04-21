@@ -25,6 +25,7 @@ import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.FilterQueryProvider;
+import android.widget.LinearLayout;
 import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
 import android.widget.TimePicker;
@@ -57,7 +58,7 @@ public final class ReminderEdit extends Activity {
                                 mEntry.time.hour,
                                 dayOfMonth, monthOfYear, year);
                 mEntry.time.normalize(true);
-                updateDateLabel();
+                updateDateTimeLabel();
             }
         };
     private final OnTimeSetListener mTimeSetListener =
@@ -69,7 +70,7 @@ public final class ReminderEdit extends Activity {
                                 mEntry.time.month,
                                 mEntry.time.year);
                 mEntry.time.normalize(true);
-                updateTimeLabel();
+                updateDateTimeLabel();
             }
         };
 
@@ -104,6 +105,12 @@ public final class ReminderEdit extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.edit);
 
+        mId = -1;
+        if (savedInstanceState != null)
+            mId = savedInstanceState.getLong(Columns._ID);
+        else
+            mId = getIntent().getLongExtra(Columns._ID, -1);
+
         mLocationLabel = (TextView) findViewById(R.id.set_location);
         mLocationLabel.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -111,6 +118,20 @@ public final class ReminderEdit extends Activity {
                 setLocation();
             }
         });
+
+        final TextView delayLabel = (TextView) findViewById(R.id.delay_label);
+        final LinearLayout dateTimeLable =
+            (LinearLayout) findViewById(R.id.set_date_time);
+        delayLabel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                delayLabel.setVisibility(View.GONE);
+                dateTimeLable.setVisibility(View.VISIBLE);
+            }
+        });
+
+        if (mId != -1)
+            delayLabel.performClick();
 
         mDateLabel = (TextView) findViewById(R.id.date_label);
         mDateLabel.setOnClickListener(new View.OnClickListener() {
@@ -133,12 +154,6 @@ public final class ReminderEdit extends Activity {
 
         final Button save = (Button) findViewById(R.id.save);
         final Button cancel = (Button) findViewById(R.id.cancel);
-
-        mId = -1;
-        if (savedInstanceState != null)
-            mId = savedInstanceState.getLong(Columns._ID);
-        else
-            mId = getIntent().getLongExtra(Columns._ID, -1);
 
         save.setOnClickListener(new OnClickListener() {
             @Override
@@ -237,14 +252,15 @@ public final class ReminderEdit extends Activity {
                 mEntry = ReminderProvider.cursorToEntry(cursor);
         }
 
-        if (mEntry == null)
-            mEntry = new ReminderEntry("", "", null);
+        if (mEntry == null) {
+            mEntry = new ReminderEntry();
+            return;
+        }
 
         mTag.setText(mEntry.tag);
         mNote.setText(mEntry.note);
         updateLocationLabel();
-        updateDateLabel();
-        updateTimeLabel();
+        updateDateTimeLabel();
     }
 
     @Override
@@ -296,11 +312,8 @@ public final class ReminderEdit extends Activity {
             mLocationLabel.setText(mEntry.location);
     }
 
-    void updateDateLabel() {
+    void updateDateTimeLabel() {
         mDateLabel.setText(mEntry.time.format("%a, %b %e"));
-    }
-
-    void updateTimeLabel() {
         mTimeLabel.setText(mEntry.time.format("%I:%M %p"));
     }
 

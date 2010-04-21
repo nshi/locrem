@@ -23,6 +23,9 @@ import android.os.IBinder;
 import android.os.RemoteException;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.inputmethod.EditorInfo;
@@ -145,11 +148,9 @@ implements ServiceConnection {
                             try {
                                 final byte[] currentLocation =
                                     mPMService.getCurrentLocation();
-                                addresses =
-                                    ReminderEntry.deserializeAddresses(currentLocation);
+                                mCurrent =
+                                    ReminderEntry.deserializeAddress(currentLocation);
                             } catch (RemoteException e) {}
-                            if (addresses != null && !addresses.isEmpty())
-                                mCurrent = addresses.get(0);
                         }
                     }
                     return SHOW_CURRENT;
@@ -312,21 +313,31 @@ implements ServiceConnection {
             }
         });
 
+        final Intent intent = new Intent(this, ProximityManager.class);
+        bindService(intent, this, 0);
+
         Bundle extras = state;
         if (extras == null)
             extras = getIntent().getExtras();
 
-        final String locationString =
-            extras.getString(ReminderEntry.Columns.LOCATION);
-        if (locationString != null)
-            mLocation.setText(locationString);
-        final byte[] buffer =
-            extras.getByteArray(ReminderEntry.Columns.ADDRESSES);
-        if (buffer != null) {
-            mAddresses = ReminderEntry.deserializeAddresses(buffer);
-            if (mAddresses != null)
-                updateMap(true);
+        if (extras != null) {
+            final String locationString =
+                extras.getString(ReminderEntry.Columns.LOCATION);
+            Log.w(TAG, "location string " + locationString);
+            if (locationString != null)
+                mLocation.setText(locationString);
+            final byte[] buffer =
+                extras.getByteArray(ReminderEntry.Columns.ADDRESSES);
+            if (buffer != null) {
+                mAddresses = ReminderEntry.deserializeAddresses(buffer);
+                if (mAddresses != null)
+                    updateMap(true);
+            }
         }
+
+        if (mAddresses == null)
+            // Set to the current location
+            new GeocodeTask(GeocodeTask.TYPE_CURRENT).execute();
 
         // Try to get the recent entries
         final Cursor c = managedQuery(ReminderProvider.RECENT_URI,
@@ -340,12 +351,6 @@ implements ServiceConnection {
         recent.setFilterQueryProvider(new RecentFilter(getContentResolver()));
         recent.setCursorToStringConverter(new RecentCursorToString());
         mLocation.setAdapter(recent);
-
-        final Intent intent = new Intent(this, ProximityManager.class);
-        bindService(intent, this, 0);
-
-        // Set to the current location
-        new GeocodeTask(GeocodeTask.TYPE_CURRENT).execute();
     }
 
     @Override
@@ -353,6 +358,24 @@ implements ServiceConnection {
         super.onDestroy();
 
         unbindService(this);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.location, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+        case R.id.menu_center_to_current:
+            new GeocodeTask(GeocodeTask.TYPE_CURRENT).execute();
+            return true;
+        }
+
+        return false;
     }
 
     @Override

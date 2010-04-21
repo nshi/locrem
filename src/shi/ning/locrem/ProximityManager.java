@@ -58,12 +58,17 @@ implements OnSharedPreferenceChangeListener {
 
         @Override
         public byte[] getCurrentLocation() throws RemoteException {
-            final LinkedList<Address> addresses = new LinkedList<Address>();
             final Address a =
                 locationToAddress(mManager.getLastKnownLocation(mProvider));
             if (a != null) {
-                addresses.add(a);
-                return ReminderEntry.serializeAddresses(addresses);
+                try {
+                    return ReminderEntry.serializeAddress(a);
+                } catch (IOException e) {
+                    if (Log.isLoggable(TAG, Log.INFO))
+                        Log.i(TAG, "failed to serialize current location: "
+                              + a.toString());
+                    return null;
+                }
             } else {
                 return null;
             }

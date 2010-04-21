@@ -78,9 +78,8 @@ public final class ReminderEntry implements Serializable {
             deserializeAddresses(in.getBlob(Columns.ADDRESSES_INDEX));
     }
 
-    public ReminderEntry(String location, String note,
-                         List<Address> addresses) {
-        this(-1, location, note, null, null, null, addresses);
+    public ReminderEntry() {
+        this(-1, null, null, null, null, null, null);
     }
 
     public ReminderEntry(String location, String note, Time time,
@@ -107,41 +106,50 @@ public final class ReminderEntry implements Serializable {
 
     public static byte[] serializeAddresses(List<Address> addresses) {
         final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        final DataOutputStream out = new DataOutputStream(buffer);
 
         // Length preceded byte array
         try {
             final int length = addresses.size();
-            out.writeByte(length);
+            buffer.write(length);
             for (int i = 0; i < length; i++) {
                 final Address a = addresses.get(i);
-                /*
-                 * longitude
-                 * latitude
-                 * admin area
-                 * sub admin area
-                 * locality
-                 * thoroughfare
-                 * feature name
-                 */
-                final String admin = a.getAdminArea();
-                final String subAdmin = a.getSubAdminArea();
-                final String locality = a.getLocality();
-                final String thoroughfare = a.getThoroughfare();
-                final String feature = a.getFeatureName();
-
-                out.writeDouble(a.getLongitude());
-                out.writeDouble(a.getLatitude());
-                out.writeUTF(admin != null ? admin : "");
-                out.writeUTF(subAdmin != null ? subAdmin : "");
-                out.writeUTF(locality != null ? locality : "");
-                out.writeUTF(thoroughfare != null ? thoroughfare : "");
-                out.writeUTF(feature != null ? feature : "");
+                buffer.write(serializeAddress(a));
             }
         } catch (IOException e) {
             return null;
         }
 
+        return buffer.toByteArray();
+    }
+
+    public static byte[] serializeAddress(Address a) throws IOException {
+        final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        final DataOutputStream out = new DataOutputStream(buffer);
+
+        /*
+         * longitude
+         * latitude
+         * admin area
+         * sub admin area
+         * locality
+         * thoroughfare
+         * feature name
+         */
+        final String admin = a.getAdminArea();
+        final String subAdmin = a.getSubAdminArea();
+        final String locality = a.getLocality();
+        final String thoroughfare = a.getThoroughfare();
+        final String feature = a.getFeatureName();
+
+        out.writeDouble(a.getLongitude());
+        out.writeDouble(a.getLatitude());
+        out.writeUTF(admin != null ? admin : "");
+        out.writeUTF(subAdmin != null ? subAdmin : "");
+        out.writeUTF(locality != null ? locality : "");
+        out.writeUTF(thoroughfare != null ? thoroughfare : "");
+        out.writeUTF(feature != null ? feature : "");
+
+        out.flush();
         return buffer.toByteArray();
     }
 
@@ -156,42 +164,56 @@ public final class ReminderEntry implements Serializable {
         try {
             final byte size = in.readByte();
             for (int i = 0; i < size; i++) {
-                /*
-                 * longitude
-                 * latitude
-                 * admin area
-                 * sub admin area
-                 * locality
-                 * thoroughfare
-                 * feature name
-                 */
-                final Address a = new Address(Locale.getDefault());
-
-                a.setLongitude(in.readDouble());
-                a.setLatitude(in.readDouble());
-                final String admin = in.readUTF();
-                final String subAdmin = in.readUTF();
-                final String locality = in.readUTF();
-                final String thoroughfare = in.readUTF();
-                final String feature = in.readUTF();
-
-                if (admin.length() > 0)
-                    a.setAdminArea(admin);
-                if (subAdmin.length() > 0)
-                    a.setSubAdminArea(subAdmin);
-                if (locality.length() > 0)
-                    a.setLocality(locality);
-                if (thoroughfare.length() > 0)
-                    a.setThoroughfare(thoroughfare);
-                if (feature.length() > 0)
-                    a.setFeatureName(feature);
-
-                addresses.add(a);
+                addresses.add(deserializeAddress(in));
             }
         } catch (IOException e) {
             return null;
         }
 
         return addresses;
+    }
+
+    public static Address deserializeAddress(byte[] buffer) throws IOException {
+        if (buffer == null)
+            return null;
+
+        final ByteArrayInputStream buf = new ByteArrayInputStream(buffer);
+        final DataInputStream in = new DataInputStream(buf);
+        return deserializeAddress(in);
+    }
+
+    public static Address deserializeAddress(DataInputStream in)
+    throws IOException {
+        /*
+         * longitude
+         * latitude
+         * admin area
+         * sub admin area
+         * locality
+         * thoroughfare
+         * feature name
+         */
+        final Address a = new Address(Locale.getDefault());
+
+        a.setLongitude(in.readDouble());
+        a.setLatitude(in.readDouble());
+        final String admin = in.readUTF();
+        final String subAdmin = in.readUTF();
+        final String locality = in.readUTF();
+        final String thoroughfare = in.readUTF();
+        final String feature = in.readUTF();
+
+        if (admin.length() > 0)
+            a.setAdminArea(admin);
+        if (subAdmin.length() > 0)
+            a.setSubAdminArea(subAdmin);
+        if (locality.length() > 0)
+            a.setLocality(locality);
+        if (thoroughfare.length() > 0)
+            a.setThoroughfare(thoroughfare);
+        if (feature.length() > 0)
+            a.setFeatureName(feature);
+
+        return a;
     }
 }

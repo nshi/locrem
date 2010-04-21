@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/menu_center_to_current"
+          android:title="@string/center_to_current"
+          android:icon="@android:drawable/ic_menu_mylocation" />
+</menu>
