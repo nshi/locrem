@@ -10,6 +10,7 @@ import android.content.ComponentName;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.res.Resources;
@@ -57,6 +58,7 @@ implements ServiceConnection {
     private static final int DIALOG_NETWORK_UNAVAILABLE = 0;
     private static final int DIALOG_NOT_FOUND = 1;
     private static final int DIALOG_INVALID_ADDRESS = 2;
+    private static final int DIALOG_CHANGE_ADDRESS = 3;
 
     Geocoder mGeo;
     private MapView mMapView;
@@ -64,9 +66,9 @@ implements ServiceConnection {
     private List<Overlay> mMapOverlays;
     AutoCompleteTextView mLocation;
     private LocationOverlay mItemizedOverlay;
-    private AlertDialog.Builder mAlertBuilder;
     private ProximityManagerService mPMService;
     List<Address> mAddresses;
+    List<Address> mTmpAddresses;
 
     private static final class LocationOverlay
     extends ItemizedOverlay<OverlayItem> {
@@ -111,21 +113,28 @@ implements ServiceConnection {
             mResources = getResources();
             mType = type;
             mCurrent = null;
+            mTmpAddresses = null;
         }
 
         @Override
         protected Integer doInBackground(Object... params) {
-            List<Address> addresses = null;
+            int retval = DIALOG_NONE;
+
+            /*
+             * No need to synchronize for mTmpAddresses, since we will never
+             * access it concurrently in two threads.
+             */
             try {
                 switch (mType) {
                 case TYPE_ADDRESS:
-                    addresses = mGeo.getFromLocationName((String) params[0],
-                                                         1);
+                    mTmpAddresses = mGeo.getFromLocationName((String) params[0],
+                                                             1);
                     break;
                 case TYPE_COORDINATES:
-                    addresses = mGeo.getFromLocation((Double) params[0],
-                                                     (Double) params[1],
-                                                     1);
+                    mTmpAddresses = mGeo.getFromLocation((Double) params[0],
+                                                         (Double) params[1],
+                                                         1);
+                    retval = DIALOG_CHANGE_ADDRESS;
                     break;
                 case TYPE_CURRENT:
                     publishProgress((Void) null);
@@ -159,17 +168,11 @@ implements ServiceConnection {
                 return DIALOG_NETWORK_UNAVAILABLE;
             } catch (InterruptedException e) {}
 
-            synchronized (EditLocation.this) {
-                mAddresses = addresses;
-                if (mAddresses == null || mAddresses.size() == 0) {
-                    return DIALOG_NOT_FOUND;
-                }
+            if (mTmpAddresses == null || mTmpAddresses.size() == 0) {
+                return DIALOG_NOT_FOUND;
             }
 
-            if (mType == TYPE_COORDINATES)
-                publishProgress((Void) null);
-
-            return DIALOG_NONE;
+            return retval;
         }
 
         @Override
@@ -177,21 +180,15 @@ implements ServiceConnection {
             if (mType == TYPE_CURRENT)
                 EditLocation.this.notify(mResources.getString(R.string.finding_current_location),
                                          Toast.LENGTH_SHORT);
-            else
-                updateAddress(mLocation);
         }
 
         @Override
         protected void onPostExecute(Integer result) {
             switch (result) {
             case DIALOG_NONE:
-                // Save address in recent
-                final ContentValues values = new ContentValues();
-                values.put(ReminderProvider.RecentColumns.ADDRESS,
-                           mLocation.getText().toString());
-                getContentResolver().insert(ReminderProvider.RECENT_URI,
-                                            values);
-
+                mAddresses = mTmpAddresses;
+                mTmpAddresses = null;
+                saveAddressToRecent();
                 updateMap(true);
                 break;
             case SHOW_CURRENT:
@@ -247,8 +244,6 @@ implements ServiceConnection {
         final Drawable marker =
             getResources().getDrawable(R.drawable.red_circle);
         mItemizedOverlay = new LocationOverlay(marker);
-
-        mAlertBuilder = new AlertDialog.Builder(this);
 
         final InputMethodManager ime =
             (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
@@ -380,27 +375,75 @@ implements ServiceConnection {
 
     @Override
     protected Dialog onCreateDialog(int id) {
+        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
         final Resources resources = getResources();
-        int messageId;
+        String message = "";
+        boolean cancelable = false;
+        DialogInterface.OnClickListener okListener = null;
 
         switch (id) {
         case DIALOG_NETWORK_UNAVAILABLE:
-            messageId = R.string.network_unavailable;
+            message = resources.getString(R.string.network_unavailable);
             break;
         case DIALOG_NOT_FOUND:
-            messageId = R.string.address_not_found;
+            message = resources.getString(R.string.address_not_found);
             break;
         case DIALOG_INVALID_ADDRESS:
-            messageId = R.string.address_invalid;
+            message = resources.getString(R.string.address_invalid);
+            break;
+        case DIALOG_CHANGE_ADDRESS:
+            if (mTmpAddresses != null && mTmpAddresses.size() > 0) {
+                cancelable = true;
+                okListener = new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        mAddresses = mTmpAddresses;
+                        mTmpAddresses = null;
+                        updateAddress(mLocation);
+                        saveAddressToRecent();
+                        updateMap(false);
+                    }
+                };
+            } else {
+                message = resources.getString(R.string.address_not_found);
+            }
+
             break;
         default:
             return null;
         }
 
-        mAlertBuilder.setMessage(resources.getText(messageId))
-                     .setCancelable(false)
-                     .setPositiveButton(resources.getText(R.string.ok), null);
-        return mAlertBuilder.create();
+        builder.setMessage(message)
+               .setCancelable(cancelable)
+               .setPositiveButton(R.string.ok, okListener);
+        if (cancelable) {
+            builder.setNegativeButton(R.string.cancel,
+                                      new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    mTmpAddresses = null;
+                    dialog.cancel();
+                }
+            });
+        }
+        return builder.create();
+    }
+
+    @Override
+    protected void onPrepareDialog(int id, Dialog dialog) {
+        final Resources resources = getResources();
+        String message = null;
+
+        switch (id) {
+        case DIALOG_CHANGE_ADDRESS:
+            if (mTmpAddresses != null && !mTmpAddresses.isEmpty())
+                message = resources.getString(R.string.address_change,
+                                              addressToString(mTmpAddresses.get(0)));
+            break;
+        }
+
+        ((AlertDialog) dialog).setMessage(message);
+        super.onPrepareDialog(id, dialog);
     }
 
     @Override
@@ -408,14 +451,10 @@ implements ServiceConnection {
         return false;
     }
 
-    void updateAddress(EditText location) {
-        if (mAddresses.isEmpty())
-            return;
-
-        final Address address = mAddresses.get(0);
-        final int len = mAddresses.get(0).getMaxAddressLineIndex();
+    String addressToString(Address address) {
+        final int len = address.getMaxAddressLineIndex();
         if (len == -1)
-            return;
+            return null;
 
         final StringBuilder addressLine =
             new StringBuilder(address.getAddressLine(0));
@@ -423,7 +462,27 @@ implements ServiceConnection {
             addressLine.append(", ");
             addressLine.append(address.getAddressLine(i));
         }
-        location.setText(addressLine);
+
+        return addressLine.toString();
+    }
+
+    void updateAddress(EditText location) {
+        if (mAddresses == null || mAddresses.isEmpty())
+            return;
+
+        final Address address = mAddresses.get(0);
+        final CharSequence locationString = addressToString(address);
+        if (locationString != null)
+            location.setText(locationString);
+    }
+
+    void saveAddressToRecent() {
+        // Save address in recent
+        final ContentValues values = new ContentValues();
+        values.put(ReminderProvider.RecentColumns.ADDRESS,
+                   mLocation.getText().toString());
+        getContentResolver().insert(ReminderProvider.RECENT_URI,
+                                    values);
     }
 
     void updateMap(boolean zoom) {

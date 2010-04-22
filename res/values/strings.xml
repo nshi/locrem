@@ -25,6 +25,7 @@
     <string name="time_unit_min"> mins</string>
     <string name="network_unavailable">Network unavailable</string>
     <string name="address_not_found">Address cannot be located</string>
+    <string name="address_change">Change location to %s?</string>
     <string name="finding_current_location">Finding current location</string>
     <string name="current_location_not_found">
         Unable to find current location

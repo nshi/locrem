@@ -25,6 +25,7 @@
     <string name="time_unit_min">分钟</string>
     <string name="network_unavailable">无网络连接</string>
     <string name="address_not_found">无法定位地址</string>
+    <string name="address_change">将地址更改为%s吗?</string>
     <string name="finding_current_location">正在寻找当前位置</string>
     <string name="current_location_not_found">无法确定当前位置</string>
     <string name="address_invalid">
