@@ -30,6 +30,7 @@
               android:layout_alignParentBottom="true"
               android:textAppearance="?android:attr/textAppearanceMedium"
               android:id="@+id/list_location"
+              android:ellipsize="marquee"
               android:singleLine="true" />
     <TextView android:id="@+id/list_note"
               android:layout_width="fill_parent"
