@@ -16,6 +16,7 @@
     <string name="ok">Ok</string>
     <string name="show_all">Show All</string>
     <string name="center_to_current">Current Location</string>
+    <string name="switch_map_mode">Switch Mode</string>
     <string name="settings">Settings</string>
     <string name="proximity">Distance</string>
     <string name="distance_unit_m"> m</string>
@@ -23,6 +24,8 @@
     <string name="walking_time">Walking Time:</string>
     <string name="time_unit_sec"> secs</string>
     <string name="time_unit_min"> mins</string>
+    <string name="title_error">Error</string>
+    <string name="title_alert">Alert</string>
     <string name="network_unavailable">Network unavailable</string>
     <string name="address_not_found">Address cannot be located</string>
     <string name="address_change">Change location to %s?</string>

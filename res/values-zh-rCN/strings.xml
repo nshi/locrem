@@ -16,6 +16,7 @@
     <string name="ok">确定</string>
     <string name="show_all">显示全部</string>
     <string name="center_to_current">当前位置</string>
+    <string name="switch_map_mode">切换地图</string>
     <string name="settings">设置</string>
     <string name="proximity">距离</string>
     <string name="distance_unit_m">米</string>
@@ -23,6 +24,8 @@
     <string name="walking_time">步行时间</string>
     <string name="time_unit_sec">秒</string>
     <string name="time_unit_min">分钟</string>
+    <string name="title_error">错误</string>
+    <string name="title_alert">提示</string>
     <string name="network_unavailable">无网络连接</string>
     <string name="address_not_found">无法定位地址</string>
     <string name="address_change">将地址更改为%s吗?</string>

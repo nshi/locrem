@@ -368,6 +368,9 @@ implements ServiceConnection {
         case R.id.menu_center_to_current:
             new GeocodeTask(GeocodeTask.TYPE_CURRENT).execute();
             return true;
+        case R.id.menu_switch_mode:
+            mMapView.setSatellite(!mMapView.isSatellite());
+            return true;
         }
 
         return false;
@@ -377,6 +380,7 @@ implements ServiceConnection {
     protected Dialog onCreateDialog(int id) {
         final AlertDialog.Builder builder = new AlertDialog.Builder(this);
         final Resources resources = getResources();
+        int title = R.string.title_error;
         String message = "";
         boolean cancelable = false;
         DialogInterface.OnClickListener okListener = null;
@@ -393,6 +397,7 @@ implements ServiceConnection {
             break;
         case DIALOG_CHANGE_ADDRESS:
             if (mTmpAddresses != null && mTmpAddresses.size() > 0) {
+                title = R.string.title_alert;
                 cancelable = true;
                 okListener = new DialogInterface.OnClickListener() {
                     @Override
@@ -413,7 +418,8 @@ implements ServiceConnection {
             return null;
         }
 
-        builder.setMessage(message)
+        builder.setTitle(title)
+               .setMessage(message)
                .setCancelable(cancelable)
                .setPositiveButton(R.string.ok, okListener);
         if (cancelable) {
@@ -442,7 +448,8 @@ implements ServiceConnection {
             break;
         }
 
-        ((AlertDialog) dialog).setMessage(message);
+        if (message != null)
+            ((AlertDialog) dialog).setMessage(message);
         super.onPrepareDialog(id, dialog);
     }
 

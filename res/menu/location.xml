@@ -3,4 +3,7 @@
     <item android:id="@+id/menu_center_to_current"
           android:title="@string/center_to_current"
           android:icon="@android:drawable/ic_menu_mylocation" />
+    <item android:id="@+id/menu_switch_mode"
+          android:title="@string/switch_map_mode"
+          android:icon="@android:drawable/ic_menu_mapmode" />
 </menu>
