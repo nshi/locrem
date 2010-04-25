@@ -79,6 +79,7 @@ implements ServiceConnection {
     List<Address> mTmpAddresses;
     boolean mIsLongTap;
     GeoPoint mTapLocation;
+    boolean mIsRunning;
 
     private static final class LocationOverlay
     extends ItemizedOverlay<OverlayItem> {
@@ -190,6 +191,10 @@ implements ServiceConnection {
                 mOpenDialog = -1;
             }
 
+            // In case the activity ended earlier
+            if (mIsRunning == false)
+                return;
+
             switch (result) {
             case DIALOG_NONE:
                 mAddresses = mTmpAddresses;
@@ -203,8 +208,9 @@ implements ServiceConnection {
                         Log.v(TAG, "showing current location");
                     centerMap(addressToGeoPoint(mCurrent), true);
                 } else {
-                    EditLocation.this.notify(mResources.getString(R.string.current_location_not_found),
-                                             Toast.LENGTH_SHORT);
+                    final String message =
+                        mResources.getString(R.string.current_location_not_found);
+                    EditLocation.this.notify(message, Toast.LENGTH_SHORT);
                 }
                 break;
             default:
@@ -398,6 +404,20 @@ implements ServiceConnection {
         recent.setFilterQueryProvider(new RecentFilter(getContentResolver()));
         recent.setCursorToStringConverter(new RecentCursorToString());
         mLocation.setAdapter(recent);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+
+        mIsRunning = false;
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        mIsRunning = true;
     }
 
     @Override
