@@ -64,7 +64,7 @@ implements ServiceConnection {
     private static final int DIALOG_FINDING_LOCATION = 4;
     private static final int DIALOG_FINDING_CURRENT_LOCATION = 5;
 
-    static final int LONG_TAP_DURATION = 2000; // 2 seconds
+    static final int LONG_TAP_DURATION = 1500; // 2 seconds
     static final double MAX_LONG_TAP_DISTANCE = 100.0;
 
     Geocoder mGeo;
