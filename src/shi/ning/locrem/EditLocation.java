@@ -373,7 +373,6 @@ implements ServiceConnection {
         if (extras != null) {
             final String locationString =
                 extras.getString(ReminderEntry.Columns.LOCATION);
-            Log.w(TAG, "location string " + locationString);
             if (locationString != null)
                 mLocation.setText(locationString);
             final byte[] buffer =

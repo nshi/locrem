@@ -89,7 +89,7 @@ implements OnSharedPreferenceChangeListener {
         public void onStatusChanged(String provider, int status,
                                     Bundle extras) {
             if (Log.isLoggable(TAG, Log.DEBUG))
-                Log.w(TAG, "provider " + provider + " status changed to "
+                Log.d(TAG, "provider " + provider + " status changed to "
                       + status);
 
             if (status == LocationProvider.AVAILABLE)
