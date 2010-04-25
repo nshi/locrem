@@ -6,6 +6,7 @@ import java.util.List;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.app.ProgressDialog;
 import android.content.ComponentName;
 import android.content.ContentResolver;
 import android.content.ContentValues;
@@ -27,6 +28,7 @@ import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.inputmethod.EditorInfo;
@@ -59,6 +61,11 @@ implements ServiceConnection {
     private static final int DIALOG_NOT_FOUND = 1;
     private static final int DIALOG_INVALID_ADDRESS = 2;
     private static final int DIALOG_CHANGE_ADDRESS = 3;
+    private static final int DIALOG_FINDING_LOCATION = 4;
+    private static final int DIALOG_FINDING_CURRENT_LOCATION = 5;
+
+    static final int LONG_TAP_DURATION = 2000; // 2 seconds
+    static final double MAX_LONG_TAP_DISTANCE = 100.0;
 
     Geocoder mGeo;
     private MapView mMapView;
@@ -67,8 +74,11 @@ implements ServiceConnection {
     AutoCompleteTextView mLocation;
     private LocationOverlay mItemizedOverlay;
     private ProximityManagerService mPMService;
+    private int mOpenDialog;
     List<Address> mAddresses;
     List<Address> mTmpAddresses;
+    boolean mIsLongTap;
+    GeoPoint mTapLocation;
 
     private static final class LocationOverlay
     extends ItemizedOverlay<OverlayItem> {
@@ -137,8 +147,6 @@ implements ServiceConnection {
                     retval = DIALOG_CHANGE_ADDRESS;
                     break;
                 case TYPE_CURRENT:
-                    publishProgress((Void) null);
-
                     // Let's spin until mPMService is ready
                     int count = 5;
                     while (count-- > 0) {
@@ -176,14 +184,12 @@ implements ServiceConnection {
         }
 
         @Override
-        protected void onProgressUpdate(Void... values) {
-            if (mType == TYPE_CURRENT)
-                EditLocation.this.notify(mResources.getString(R.string.finding_current_location),
-                                         Toast.LENGTH_SHORT);
-        }
-
-        @Override
         protected void onPostExecute(Integer result) {
+            if (mOpenDialog >= 0) {
+                dismissDialog(mOpenDialog);
+                mOpenDialog = -1;
+            }
+
             switch (result) {
             case DIALOG_NONE:
                 mAddresses = mTmpAddresses;
@@ -258,6 +264,8 @@ implements ServiceConnection {
                     Log.v(TAG, "selected from drop down menu: " + address);
                 ime.hideSoftInputFromWindow(arg1.getApplicationWindowToken(),
                                             0);
+                mOpenDialog = DIALOG_FINDING_LOCATION;
+                showDialog(mOpenDialog);
                 new GeocodeTask(GeocodeTask.TYPE_ADDRESS).execute(address);
             }
         });
@@ -269,20 +277,61 @@ implements ServiceConnection {
                     return false;
                 ime.hideSoftInputFromWindow(v.getWindowToken(), 0);
                 ((AutoCompleteTextView) v).dismissDropDown();
+                mOpenDialog = DIALOG_FINDING_LOCATION;
+                showDialog(mOpenDialog);
                 new GeocodeTask(GeocodeTask.TYPE_ADDRESS)
                         .execute(v.getText().toString());
                 return true;
             }
         });
 
-        // Tap overlay
-        final Overlay tapOverlay = new Overlay() {
+        final Runnable longTapRunnable = new Runnable() {
             @Override
-            public boolean onTap(GeoPoint p, MapView mapView) {
-                new GeocodeTask(GeocodeTask.TYPE_COORDINATES)
-                        .execute(p.getLatitudeE6() / 1E6,
-                                 p.getLongitudeE6() / 1E6);
-                return true;
+            public void run() {
+                if (mIsLongTap && mTapLocation != null) {
+                    mOpenDialog = DIALOG_FINDING_LOCATION;
+                    showDialog(mOpenDialog);
+                    new GeocodeTask(GeocodeTask.TYPE_COORDINATES)
+                            .execute(mTapLocation.getLatitudeE6() / 1E6,
+                                     mTapLocation.getLongitudeE6() / 1E6);
+                }
+            }
+        };
+
+        // Tap overlay
+        mIsLongTap = false;
+        mTapLocation = null;
+        final Overlay tapOverlay = new Overlay() {
+            private float firstX;
+            private float firstY;
+
+            @Override
+            public boolean onTouchEvent(MotionEvent e, MapView mapView) {
+                final int actionId = e.getAction();
+
+                if (actionId == MotionEvent.ACTION_DOWN) {
+                    mIsLongTap = true;
+                    firstX = e.getX();
+                    firstY = e.getY();
+                    mTapLocation = mapView.getProjection()
+                                          .fromPixels((int) firstX,
+                                                      (int) firstY);
+                    mapView.postDelayed(longTapRunnable, LONG_TAP_DURATION);
+                } else if ((actionId & MotionEvent.ACTION_POINTER_DOWN)
+                            == MotionEvent.ACTION_POINTER_DOWN
+                            || actionId == MotionEvent.ACTION_UP) {
+                    mIsLongTap = false;
+                    mTapLocation = null;
+                } else if (actionId == MotionEvent.ACTION_MOVE) {
+                    final double dist = Math.pow(e.getX() - firstX, 2)
+                                        + Math.pow(e.getY() - firstY, 2);
+                    if (dist > MAX_LONG_TAP_DISTANCE) {
+                        mIsLongTap = false;
+                        mTapLocation = null;
+                    }
+                }
+
+                return false;
             }
         };
         mMapOverlays.add(tapOverlay);
@@ -330,9 +379,12 @@ implements ServiceConnection {
             }
         }
 
-        if (mAddresses == null)
+        if (mAddresses == null) {
+            mOpenDialog = DIALOG_FINDING_CURRENT_LOCATION;
+            showDialog(mOpenDialog);
             // Set to the current location
             new GeocodeTask(GeocodeTask.TYPE_CURRENT).execute();
+        }
 
         // Try to get the recent entries
         final Cursor c = managedQuery(ReminderProvider.RECENT_URI,
@@ -366,6 +418,8 @@ implements ServiceConnection {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
         case R.id.menu_center_to_current:
+            mOpenDialog = DIALOG_FINDING_CURRENT_LOCATION;
+            showDialog(mOpenDialog);
             new GeocodeTask(GeocodeTask.TYPE_CURRENT).execute();
             return true;
         case R.id.menu_switch_mode:
@@ -379,6 +433,7 @@ implements ServiceConnection {
     @Override
     protected Dialog onCreateDialog(int id) {
         final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        final ProgressDialog dialog = new ProgressDialog(this);
         final Resources resources = getResources();
         int title = R.string.title_error;
         String message = "";
@@ -414,6 +469,14 @@ implements ServiceConnection {
             }
 
             break;
+        case DIALOG_FINDING_LOCATION:
+            message = resources.getString(R.string.finding_location);
+            dialog.setMessage(message);
+            return dialog;
+        case DIALOG_FINDING_CURRENT_LOCATION:
+            message = resources.getString(R.string.finding_current_location);
+            dialog.setMessage(message);
+            return dialog;
         default:
             return null;
         }

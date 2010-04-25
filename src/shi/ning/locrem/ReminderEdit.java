@@ -200,6 +200,7 @@ public final class ReminderEdit extends Activity {
     @Override
     protected Dialog onCreateDialog(int id) {
         final Resources resources = getResources();
+        int titleId = 0;
         int messageId = 0;
 
         switch (id) {
@@ -216,11 +217,13 @@ public final class ReminderEdit extends Activity {
                                         mEntry.time.minute,
                                         false);
         case DIALOG_INCOMPLETE_FORM:
+            titleId = R.string.title_error;
             messageId = R.string.incomplete_form;
             break;
         }
 
-        mAlertBuilder.setMessage(resources.getText(messageId))
+        mAlertBuilder.setTitle(titleId)
+                     .setMessage(resources.getText(messageId))
                      .setCancelable(false)
                      .setPositiveButton(resources.getText(R.string.ok), null);
         return mAlertBuilder.create();
