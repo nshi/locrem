@@ -282,7 +282,7 @@ implements OnSharedPreferenceChangeListener {
             getContentResolver().query(uri, null, null, null, null);
 
         if (cursor.moveToFirst()) {
-            final ReminderEntry entry = ReminderProvider.cursorToEntry(cursor);
+            final ReminderEntry entry = new ReminderEntry(cursor);
             cursor.close();
 
             if (!entry.enabled)
@@ -358,8 +358,7 @@ implements OnSharedPreferenceChangeListener {
                 final Uri uri =
                     ContentUris.withAppendedId(ReminderProvider.CONTENT_URI,
                                                entry.id);
-                final ContentValues values =
-                    ReminderProvider.packEntryToValues(entry);
+                final ContentValues values = entry.serializeToValues();
                 getContentResolver().update(uri, values, null, null);
                 if (Log.isLoggable(TAG, Log.VERBOSE))
                     Log.v(TAG, "entry " + entry.id + " is disabled");

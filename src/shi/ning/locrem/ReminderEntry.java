@@ -9,6 +9,8 @@ import java.io.Serializable;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
+
+import android.content.ContentValues;
 import android.database.Cursor;
 import android.location.Address;
 import android.provider.BaseColumns;
@@ -17,13 +19,16 @@ import android.text.format.Time;
 public final class ReminderEntry implements Serializable {
     private static final long serialVersionUID = 1L;
 
+    public static final int TRUE = 1;
+    public static final int FALSE = 0;
+
     public long id;
-    public String location;
-    public String note;
-    public Time time;
-    public Time lastCheck;
-    public List<Address> addresses;
-    public String tag;
+    public String location = null;
+    public String note = null;
+    public Time time = null;
+    public Time lastCheck = null;
+    public List<Address> addresses = null;
+    public String tag = null;
     public boolean enabled;
 
     public static final class Columns implements BaseColumns {
@@ -57,23 +62,28 @@ public final class ReminderEntry implements Serializable {
 
     public ReminderEntry(Cursor in) {
         this.id = in.getLong(Columns.ID_INDEX);
-        long time = in.getLong(Columns.TIME_INDEX);
-        this.time = new Time();
-        this.time.setToNow();
-        this.time.second = 0;
-        if (time > 0) {
-            this.time.set(time);
+        if (!in.isNull(Columns.TIME_INDEX)) {
+            long time = in.getLong(Columns.TIME_INDEX);
+            this.time = new Time();
+            this.time.setToNow();
+            this.time.second = 0;
+            if (time > 0) {
+                this.time.set(time);
+            }
         }
-        time = in.getLong(Columns.LASTCHECK_INDEX);
-        this.lastCheck = null;
-        if (time > 0) {
-            this.lastCheck = new Time();
-            this.lastCheck.set(time);
+        if (!in.isNull(Columns.LASTCHECK_INDEX)) {
+            long time = in.getLong(Columns.LASTCHECK_INDEX);
+            this.lastCheck = null;
+            if (time > 0) {
+                this.lastCheck = new Time();
+                this.lastCheck.set(time);
+            }
         }
         this.enabled = in.getInt(Columns.ENABLED_INDEX) == 1;
         this.location = in.getString(Columns.LOCATION_INDEX);
         this.note = in.getString(Columns.NOTE_INDEX);
-        this.tag = in.getString(Columns.TAG_INDEX);
+        if (!in.isNull(Columns.TAG_INDEX))
+            this.tag = in.getString(Columns.TAG_INDEX);
         this.addresses =
             deserializeAddresses(in.getBlob(Columns.ADDRESSES_INDEX));
     }
@@ -91,10 +101,6 @@ public final class ReminderEntry implements Serializable {
                          Time time, Time lastCheck, String tag,
                          List<Address> addresses) {
         this.id = id;
-        if (time == null) {
-            time = new Time();
-            time.setToNow();
-        }
         this.time = time;
         this.lastCheck = null;
         this.location = location;
@@ -102,6 +108,11 @@ public final class ReminderEntry implements Serializable {
         this.tag = tag;
         this.addresses = addresses;
         this.enabled = true;
+    }
+
+    public void setTimeToNow() {
+        this.time = new Time();
+        this.time.setToNow();
     }
 
     public static byte[] serializeAddresses(List<Address> addresses) {
@@ -215,5 +226,25 @@ public final class ReminderEntry implements Serializable {
             a.setFeatureName(feature);
 
         return a;
+    }
+
+    public ContentValues serializeToValues() {
+        ContentValues initialValues = new ContentValues();
+        initialValues.put(ReminderEntry.Columns.LOCATION, this.location);
+        initialValues.put(ReminderEntry.Columns.NOTE, this.note);
+        initialValues.put(ReminderEntry.Columns.ENABLED,
+                          this.enabled ? TRUE : FALSE);
+        if (this.tag != null)
+            initialValues.put(ReminderEntry.Columns.TAG, this.tag);
+        initialValues.put(ReminderEntry.Columns.ADDRESSES,
+                          ReminderEntry.serializeAddresses(this.addresses));
+        if (this.time != null)
+            initialValues.put(ReminderEntry.Columns.TIME,
+                              this.time.toMillis(false));
+        if (this.lastCheck != null)
+            initialValues.put(ReminderEntry.Columns.LASTCHECK,
+                              this.lastCheck.toMillis(false));
+
+        return initialValues;
     }
 }

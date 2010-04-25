@@ -15,7 +15,6 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.net.Uri;
 import android.provider.BaseColumns;
-import android.text.format.Time;
 import android.util.Log;
 
 public final class ReminderProvider extends ContentProvider {
@@ -97,9 +96,9 @@ public final class ReminderProvider extends ContentProvider {
         private static final String ENTRIES_CREATE =
             "CREATE TABLE " + ENTRIES_TABLE
             + " (_id INTEGER PRIMARY KEY,"
-            + " time INTEGER,"
-            + " last INTEGER,"
-            + " enabled TINYINT,"
+            + " time INTEGER DEFAULT NULL,"
+            + " last INTEGER DEFAULT NULL,"
+            + " enabled TINYINT DEFAULT 0,"
             + " loc text NOT NULL,"
             + " tag text DEFAULT NULL,"
             + " note text NOT NULL,"
@@ -111,9 +110,6 @@ public final class ReminderProvider extends ContentProvider {
             "CREATE TABLE " + RECENT_TABLE
             + " (_id INTEGER PRIMARY KEY,"
             + " address TEXT NOT NULL UNIQUE);";
-
-        private static final int TRUE = 1;
-        private static final int FALSE = 0;
 
         private final DatabaseHelper mDbHelper;
 
@@ -186,61 +182,10 @@ public final class ReminderProvider extends ContentProvider {
         final LinkedList<ReminderEntry> entries =
             new LinkedList<ReminderEntry>();
         do {
-            entries.add(cursorToEntry(cursor));
+            entries.add(new ReminderEntry(cursor));
         } while (cursor.moveToNext());
 
         return entries;
-    }
-
-    public static ReminderEntry cursorToEntry(Cursor cursor) {
-        Time time = null;
-        if (!cursor.isNull(ReminderEntry.Columns.TIME_INDEX)) {
-            time = new Time();
-            time.set(cursor.getLong(ReminderEntry.Columns.TIME_INDEX));
-        }
-        Time lastCheck = null;
-        if (!cursor.isNull(ReminderEntry.Columns.LASTCHECK_INDEX)) {
-            lastCheck = new Time();
-            lastCheck.set(cursor.getLong(ReminderEntry.Columns.LASTCHECK_INDEX));
-        }
-        String tag = null;
-        if (!cursor.isNull(ReminderEntry.Columns.TAG_INDEX)) {
-            tag = cursor.getString(ReminderEntry.Columns.TAG_INDEX);
-        }
-        final byte[] blob =
-            cursor.getBlob(ReminderEntry.Columns.ADDRESSES_INDEX);
-        final ReminderEntry entry =
-            new ReminderEntry(cursor.getLong(ReminderEntry.Columns.ID_INDEX),
-                              cursor.getString(ReminderEntry.Columns.LOCATION_INDEX),
-                              cursor.getString(ReminderEntry.Columns.NOTE_INDEX),
-                              time, lastCheck, tag,
-                              ReminderEntry.deserializeAddresses(blob));
-        entry.lastCheck = lastCheck;
-        entry.enabled =
-            cursor.getInt(ReminderEntry.Columns.ENABLED_INDEX) == Database.TRUE
-            ? true : false;
-
-        return entry;
-    }
-
-    public static ContentValues packEntryToValues(ReminderEntry entry) {
-        ContentValues initialValues = new ContentValues();
-        initialValues.put(ReminderEntry.Columns.LOCATION, entry.location);
-        initialValues.put(ReminderEntry.Columns.NOTE, entry.note);
-        initialValues.put(ReminderEntry.Columns.ENABLED,
-                          entry.enabled ? Database.TRUE
-                                        : Database.FALSE);
-        initialValues.put(ReminderEntry.Columns.TAG, entry.tag);
-        initialValues.put(ReminderEntry.Columns.ADDRESSES,
-                          ReminderEntry.serializeAddresses(entry.addresses));
-        if (entry.time != null)
-            initialValues.put(ReminderEntry.Columns.TIME,
-                              entry.time.toMillis(false));
-        if (entry.lastCheck != null)
-            initialValues.put(ReminderEntry.Columns.LASTCHECK,
-                              entry.lastCheck.toMillis(false));
-
-        return initialValues;
     }
 
     @Override
@@ -335,13 +280,13 @@ public final class ReminderProvider extends ContentProvider {
             res = mDb.query(Database.ENTRIES_TABLE,
                             ReminderEntry.Columns.QUERY_COLUMNS,
                             ReminderEntry.Columns.ENABLED + "="
-                            + Database.TRUE);
+                            + ReminderEntry.TRUE);
             break;
         case ENTRIES_DISABLED:
             res = mDb.query(Database.ENTRIES_TABLE,
                             ReminderEntry.Columns.QUERY_COLUMNS,
                             ReminderEntry.Columns.ENABLED + "="
-                            + Database.FALSE);
+                            + ReminderEntry.FALSE);
             break;
         case ENTRIES_ID:
             res = mDb.query(Database.ENTRIES_TABLE,

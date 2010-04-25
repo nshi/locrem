@@ -17,6 +17,7 @@ import android.content.res.Resources;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.format.Time;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -42,6 +43,7 @@ public final class ReminderEdit extends Activity {
     ReminderEntry mEntry;
 
     private TextView mLocationLabel;
+    private TextView mDelayLabel;
     private TextView mDateLabel;
     private TextView mTimeLabel;
     private AutoCompleteTextView mTag;
@@ -119,19 +121,16 @@ public final class ReminderEdit extends Activity {
             }
         });
 
-        final TextView delayLabel = (TextView) findViewById(R.id.delay_label);
+        mDelayLabel = (TextView) findViewById(R.id.delay_label);
         final LinearLayout dateTimeLable =
             (LinearLayout) findViewById(R.id.set_date_time);
-        delayLabel.setOnClickListener(new View.OnClickListener() {
+        mDelayLabel.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                delayLabel.setVisibility(View.GONE);
+                mDelayLabel.setVisibility(View.GONE);
                 dateTimeLable.setVisibility(View.VISIBLE);
             }
         });
-
-        if (mId != -1)
-            delayLabel.performClick();
 
         mDateLabel = (TextView) findViewById(R.id.date_label);
         mDateLabel.setOnClickListener(new View.OnClickListener() {
@@ -205,12 +204,20 @@ public final class ReminderEdit extends Activity {
 
         switch (id) {
         case DIALOG_DATE:
+            if (mEntry.time == null) {
+                mEntry.time = new Time();
+                mEntry.time.setToNow();
+            }
             return new DatePickerDialog(this,
                                         mDateSetListener,
                                         mEntry.time.year,
                                         mEntry.time.month,
                                         mEntry.time.monthDay);
         case DIALOG_TIME:
+            if (mEntry.time == null) {
+                mEntry.time = new Time();
+                mEntry.time.setToNow();
+            }
             return new TimePickerDialog(this,
                                         mTimeSetListener,
                                         mEntry.time.hour,
@@ -252,7 +259,7 @@ public final class ReminderEdit extends Activity {
                 ContentUris.withAppendedId(ReminderProvider.CONTENT_URI, mId);
             final Cursor cursor = managedQuery(uri, null, null, null, null);
             if (cursor.moveToFirst())
-                mEntry = ReminderProvider.cursorToEntry(cursor);
+                mEntry = new ReminderEntry(cursor);
         }
 
         if (mEntry == null) {
@@ -286,7 +293,7 @@ public final class ReminderEdit extends Activity {
         final Resources resources = getResources();
         mEntry.tag = mTag.getText().toString();
         mEntry.note = mNote.getText().toString();
-        final ContentValues values = ReminderProvider.packEntryToValues(mEntry);
+        final ContentValues values = mEntry.serializeToValues();
         if (mId >= 0) {
             Uri uri = ContentUris.withAppendedId(ReminderProvider.CONTENT_URI,
                                                  mEntry.id);
@@ -316,8 +323,11 @@ public final class ReminderEdit extends Activity {
     }
 
     void updateDateTimeLabel() {
-        mDateLabel.setText(mEntry.time.format("%a, %b %e"));
-        mTimeLabel.setText(mEntry.time.format("%I:%M %p"));
+        if (mEntry.time != null) {
+            mDelayLabel.performClick();
+            mDateLabel.setText(mEntry.time.format("%a, %b %e"));
+            mTimeLabel.setText(mEntry.time.format("%I:%M %p"));
+        }
     }
 
     private boolean checkForm() {

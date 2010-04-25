@@ -94,8 +94,7 @@ implements ServiceConnection {
 
         final Uri uri = ContentUris.withAppendedId(ReminderProvider.CONTENT_URI,
                                                    entry.id);
-        if (getContentResolver().update(uri,
-                                        ReminderProvider.packEntryToValues(entry),
+        if (getContentResolver().update(uri, entry.serializeToValues(),
                                         null, null) == 1) {
             if (Log.isLoggable(TAG, Log.DEBUG))
                 Log.d(TAG, entry.id + " is "
