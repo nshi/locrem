@@ -30,6 +30,7 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.preference.PreferenceManager;
+import android.text.TextUtils;
 import android.text.format.Time;
 import android.util.Log;
 
@@ -82,7 +83,9 @@ implements OnSharedPreferenceChangeListener {
     private ProximityListener mListener;
     private ProximityListener mSecondaryListener;
     private SharedPreferences mSettings;
-    int mRange;
+    private int mRange;
+    private boolean mVibration;
+    private String mRingtone;
 
     private final class ProximityListener implements LocationListener {
         @Override
@@ -168,9 +171,15 @@ implements OnSharedPreferenceChangeListener {
         mSettings =
             PreferenceManager.getDefaultSharedPreferences(getApplication());
         mSettings.registerOnSharedPreferenceChangeListener(this);
-        mRange = mSettings.getInt(Settings.KEY_RANGE, Settings.DEFAULT_RANGE);
-        if (Log.isLoggable(TAG, Log.VERBOSE))
+        mRange = Integer.parseInt(mSettings.getString(Settings.KEY_RANGE,
+                                                      Settings.DEFAULT_RANGE));
+        mVibration = mSettings.getBoolean(Settings.KEY_VIBRATION,
+                                          Settings.DEFAULT_VIBRATION);
+        mRingtone = mSettings.getString(Settings.KEY_RINGTONE, null);
+        if (Log.isLoggable(TAG, Log.VERBOSE)) {
             Log.v(TAG, "range settings is " + mRange);
+            Log.v(TAG, "vibration is " + mVibration);
+        }
 
         mProvider = PRIMARY_PROVIDER;
         register(mProvider);
@@ -270,9 +279,23 @@ implements OnSharedPreferenceChangeListener {
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
                                           String key) {
-        mRange = mSettings.getInt(key, Settings.DEFAULT_RANGE);
-        if (Log.isLoggable(TAG, Log.DEBUG))
-            Log.d(TAG, key + " value changed to " + mRange);
+        if (key.equals(Settings.KEY_RANGE)) {
+            mRange =
+                Integer.parseInt(mSettings.getString(key,
+                                                     Settings.DEFAULT_RANGE));
+            if (Log.isLoggable(TAG, Log.DEBUG))
+                Log.d(TAG, key + " value changed to " + mRange);
+        } else if (key.equals(Settings.KEY_VIBRATION)) {
+            mVibration = mSettings.getBoolean(key, Settings.DEFAULT_VIBRATION);
+
+            if (Log.isLoggable(TAG, Log.DEBUG))
+                Log.d(TAG, key + " value changed to " + mVibration);
+        } else if (key.equals(Settings.KEY_RINGTONE)) {
+            mRingtone = mSettings.getString(Settings.KEY_RINGTONE, null);
+
+            if (Log.isLoggable(TAG, Log.DEBUG))
+                Log.d(TAG, key + " value changed to " + mRingtone);
+        }
     }
 
     void onEntryChanged(long id) {
@@ -281,21 +304,22 @@ implements OnSharedPreferenceChangeListener {
         final Cursor cursor =
             getContentResolver().query(uri, null, null, null, null);
 
-        if (cursor.moveToFirst()) {
-            final ReminderEntry entry = new ReminderEntry(cursor);
-            cursor.close();
+        try {
+            if (cursor.moveToFirst()) {
+                final ReminderEntry entry = new ReminderEntry(cursor);
 
-            if (!entry.enabled)
-                return;
+                if (!entry.enabled)
+                    return;
 
-            if (mProvider == null) {
-                if (Log.isLoggable(TAG, Log.DEBUG))
-                    Log.d(TAG, "no location provider is available");
-                return;
+                if (mProvider == null) {
+                    if (Log.isLoggable(TAG, Log.DEBUG))
+                        Log.d(TAG, "no location provider is available");
+                    return;
+                }
+
+                new GeocodeTask(entry).execute();
             }
-
-            new GeocodeTask(entry).execute();
-        } else {
+        } finally {
             cursor.close();
         }
     }
@@ -304,9 +328,13 @@ implements OnSharedPreferenceChangeListener {
         final Cursor cursor =
             getContentResolver().query(ReminderProvider.ENABLED_URI,
                                        null, null, null, null);
-        final LinkedList<ReminderEntry> entries =
-            ReminderProvider.cursorToEntries(cursor);
-        cursor.close();
+        LinkedList<ReminderEntry> entries = null;
+
+        try {
+            entries = ReminderProvider.cursorToEntries(cursor);
+        } finally {
+            cursor.close();
+        }
 
         if (current == null || entries == null)
             return;
@@ -444,10 +472,13 @@ implements OnSharedPreferenceChangeListener {
         final PendingIntent contentIntent =
             PendingIntent.getActivity(this, 0, notificationIntent, 0);
 
-        final int icon = android.R.drawable.alert_dark_frame;
+        final int icon = R.drawable.ic_stat_notify;
         final long when = System.currentTimeMillis();
         final Notification notification = new Notification(icon, message, when);
-        notification.defaults |= Notification.DEFAULT_ALL;
+        if (mVibration)
+            notification.defaults |= Notification.DEFAULT_VIBRATE;
+        notification.sound =
+            TextUtils.isEmpty(mRingtone) ? null : Uri.parse(mRingtone);
         notification.flags |= Notification.FLAG_AUTO_CANCEL;
         notification.setLatestEventInfo(context, contentTitle,
                                         message, contentIntent);

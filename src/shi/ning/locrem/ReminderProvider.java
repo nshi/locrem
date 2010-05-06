@@ -368,22 +368,24 @@ public final class ReminderProvider extends ContentProvider {
                                    selection);
         final MatrixCursor res = new MatrixCursor(SuggestColumns);
 
-        if (!c.moveToFirst()) {
+        try {
+            if (!c.moveToFirst()) {
+                return res;
+            }
+
+            do {
+                final long id = c.getLong(ReminderEntry.Columns.ID_INDEX);
+                final Object[] row =
+                    new Object[] {id,
+                                  c.getString(ReminderEntry.Columns.NOTE_INDEX),
+                                  c.getString(ReminderEntry.Columns.LOCATION_INDEX),
+                                  id};
+                res.addRow(row);
+            } while (c.moveToNext());
+        } finally {
             c.close();
-            return res;
         }
 
-        do {
-            final long id = c.getLong(ReminderEntry.Columns.ID_INDEX);
-            final Object[] row =
-                new Object[] {id,
-                              c.getString(ReminderEntry.Columns.NOTE_INDEX),
-                              c.getString(ReminderEntry.Columns.LOCATION_INDEX),
-                              id};
-            res.addRow(row);
-        } while (c.moveToNext());
-
-        c.close();
         return res;
     }
 }

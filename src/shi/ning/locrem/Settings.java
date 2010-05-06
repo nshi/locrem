@@ -2,107 +2,81 @@ package shi.ning.locrem;
 
 import java.text.DecimalFormat;
 
-import android.app.Activity;
-import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.res.Resources;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
+import android.preference.ListPreference;
+import android.preference.PreferenceActivity;
 import android.util.Log;
-import android.widget.SeekBar;
-import android.widget.TextView;
-import android.widget.Toast;
-import android.widget.SeekBar.OnSeekBarChangeListener;
 
-public final class Settings extends Activity {
+public final class Settings extends PreferenceActivity
+implements OnSharedPreferenceChangeListener {
     static final String TAG = "Settings";
     private static final double WALKING_SPEED = 1.66; // 1.66 m/s
 
-    public static final String KEY_RANGE = "range";
+    public static final String KEY_RANGE = "settings_range";
+    public static final String KEY_RINGTONE = "settings_ringtone";
+    public static final String KEY_VIBRATION = "settings_vibration";
 
-    public static final int DEFAULT_RANGE = 500;
+    public static final String DEFAULT_RANGE = "500";
+    public static final boolean DEFAULT_VIBRATION = false;
 
-    SharedPreferences mSettings;
-    private SeekBar mRangeBar;
-    TextView mDistanceLabel;
-    TextView mWalkingLabel;
+    private ListPreference mRange;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        setContentView(R.layout.settings);
+        addPreferencesFromResource(R.layout.settings);
 
-        mRangeBar = (SeekBar) findViewById(R.id.range_bar);
-        mDistanceLabel = (TextView) findViewById(R.id.settings_meters_label);
-        mWalkingLabel = (TextView) findViewById(R.id.walking_time);
+        getPreferenceScreen().getSharedPreferences()
+                             .registerOnSharedPreferenceChangeListener(this);
 
-        mRangeBar.setOnSeekBarChangeListener(new OnSeekBarChangeListener() {
-            private int mRange;
+        mRange = (ListPreference) findPreference(KEY_RANGE);
 
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-                if (!mSettings.edit().putInt(KEY_RANGE, mRange).commit()) {
-                    if (Log.isLoggable(TAG, Log.WARN))
-                        Log.w(TAG, "failed to save settings");
-
-                    Settings.this.notify(getResources().getString(R.string.save_settings_failed),
-                                         Toast.LENGTH_LONG);
-                }
-
-                if (Log.isLoggable(TAG, Log.VERBOSE))
-                    Log.v(TAG, "succeessfully saved settings");
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {}
-
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress,
-                                          boolean fromUser) {
-                final double walkingTime = progress / WALKING_SPEED; // seconds
-                final Resources resources = getResources();
-                final DecimalFormat formatter = new DecimalFormat("#.#");
-                mRange = progress;
-
-                if (Log.isLoggable(TAG, Log.DEBUG))
-                    Log.d(TAG, "range changed to " + progress
-                          + " by " + (fromUser ? "user" : "program"));
-
-                if (progress < 500)
-                    mDistanceLabel.setHint(Integer.toString(progress)
-                                           + resources.getText(R.string.distance_unit_m));
-                else
-                    mDistanceLabel.setHint(formatter.format(progress / 1000.0)
-                                           + resources.getText(R.string.distance_unit_km));
-
-                if (walkingTime < 60.0)
-                    mWalkingLabel.setHint(formatter.format(walkingTime)
-                                          + resources.getText(R.string.time_unit_sec));
-                else
-                    mWalkingLabel.setHint(formatter.format(walkingTime / 60.0)
-                                          + resources.getText(R.string.time_unit_min));
-            }
-        });
-
-        mSettings =
-            PreferenceManager.getDefaultSharedPreferences(getApplication());
+        final int value =
+            Integer.parseInt(mRange.getValue());
+        updateRangeSummary(value);
 
         if (Log.isLoggable(TAG, Log.VERBOSE))
             Log.v(TAG, "created");
     }
 
     @Override
-    protected void onResume() {
-        super.onResume();
-
-        if (Log.isLoggable(TAG, Log.VERBOSE))
-            Log.v(TAG, "loading settings");
-        mRangeBar.setProgress(mSettings.getInt(KEY_RANGE, DEFAULT_RANGE));
+    public void onSharedPreferenceChanged(SharedPreferences pref,
+                                          String key) {
+        if (key.equals(KEY_RANGE)) {
+            final int value =
+                Integer.parseInt(pref.getString(KEY_RANGE, DEFAULT_RANGE));
+            updateRangeSummary(value);
+        }
     }
 
-    private void notify(String message, int duration) {
-        Context context = getApplicationContext();
-        Toast.makeText(context, message, duration).show();
+    private void updateRangeSummary(int value) {
+        final Resources resources = getResources();
+        final DecimalFormat formatter = new DecimalFormat("#.#");
+        final double walkingTime = value / WALKING_SPEED;
+
+        if (Log.isLoggable(TAG, Log.DEBUG))
+            Log.d(TAG, "range changed to " + value);
+
+        String distance = null;
+        if (value <= 500)
+            distance = resources.getString(R.string.distance_in_m, value);
+        else
+            distance = resources.getString(R.string.distance_in_km,
+                                           formatter.format(value / 1000.0));
+
+        String walking = null;
+        if (walkingTime < 60.0)
+            walking = resources.getString(R.string.time_in_sec,
+                                          formatter.format(walkingTime));
+        else
+            walking = resources.getString(R.string.time_in_min,
+                                          formatter.format(walkingTime / 60.0));
+        final String summary = distance + " (" + walking + " "
+            + resources.getString(R.string.walk) + ")";
+        mRange.setSummary(summary);
     }
 }

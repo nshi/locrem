@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="settings_proximity_list">
+        <item>50 meters</item>
+        <item>100 meters</item>
+        <item>0.5 kilometers</item>
+        <item>1 kilometers</item>
+        <item>1.5 kilometers</item>
+        <item>2 kilometers</item>
+    </string-array>
+    <string-array name="settings_proximityvalues_list">
+        <item>50</item>
+        <item>100</item>
+        <item>500</item>
+        <item>1000</item>
+        <item>1500</item>
+        <item>2000</item>
+    </string-array>
+</resources>

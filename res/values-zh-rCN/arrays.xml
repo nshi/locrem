@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="settings_proximity_list">
+        <item>50 米</item>
+        <item>100 米</item>
+        <item>0.5 公里</item>
+        <item>1 公里</item>
+        <item>1.5 公里</item>
+        <item>2 公里</item>
+    </string-array>
+</resources>
