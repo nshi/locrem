@@ -1,0 +1,22 @@
+#+SEQ_TODO: ACTIVE DONE
+#+PRIORITIES: A D B
+
+* Feature
+** [#B] Sorting															 :UI:
+   Allow different sorting mechanisms, time, distance, importance, tag
+** ACTIVE [#A] Map marker												 :UI:
+   Use a dot to represent the current location, and use circle for radius
+** [#B] Allow repeatance, and event happening in a time range		   :Core:
+** [#C] Allow searching for businesses								   :Core:
+** [#D] Integrate with other apps, like Calendar?					   :Core:
+
+* Bug
+** [#A] Not closing a cursor										:Storage:
+** [#C] Progress dialog freezes after the first time					 :UI:
+
+* Refactorization
+** [#C] Check memory leak
+** [#A] New icons														 :UI:
+** [#B] Mapview loading is kind of slow									 :UI:
+** [#C] Code cleanup
+** [#C] Add more log messages
