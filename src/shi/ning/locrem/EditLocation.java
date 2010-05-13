@@ -14,8 +14,12 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.database.Cursor;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.Point;
 import android.graphics.drawable.Drawable;
 import android.location.Address;
 import android.location.Geocoder;
@@ -23,6 +27,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.RemoteException;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
@@ -51,6 +56,7 @@ import com.google.android.maps.MapController;
 import com.google.android.maps.MapView;
 import com.google.android.maps.Overlay;
 import com.google.android.maps.OverlayItem;
+import com.google.android.maps.Projection;
 
 public final class EditLocation extends MapActivity
 implements ServiceConnection {
@@ -81,14 +87,41 @@ implements ServiceConnection {
     GeoPoint mTapLocation;
     boolean mIsRunning;
 
-    private static final class LocationOverlay
+    private final class LocationOverlay
     extends ItemizedOverlay<OverlayItem> {
         private final ArrayList<OverlayItem> mItems;
+        private final Paint mPaint;
+
+        @Override
+        public void draw(Canvas canvas, MapView mapView, boolean shadow) {
+            if (shadow) {
+                Projection projection = mapView.getProjection();
+                SharedPreferences pref =
+                    PreferenceManager.getDefaultSharedPreferences
+                    (EditLocation.this.getApplication());
+                int radius =
+                    Integer.parseInt(pref.getString(Settings.KEY_RANGE,
+                                                    Settings.DEFAULT_RANGE));
+                float radiusOnScreen = projection.metersToEquatorPixels(radius);
+                Point out = new Point();
+                int len = mItems.size();
+
+                for (int i = 0; i < len; i++) {
+                    projection.toPixels(mItems.get(i).getPoint(), out);
+                    canvas.drawCircle(out.x, out.y, radiusOnScreen, mPaint);
+                }
+            }
+
+            super.draw(canvas, mapView, shadow);
+        }
 
         public LocationOverlay(Drawable defaultMarker) {
             super(boundCenterBottom(defaultMarker));
 
             mItems = new ArrayList<OverlayItem>();
+            mPaint = new Paint();
+            mPaint.setARGB(100, 0, 0, 255);
+            mPaint.setAntiAlias(true);
         }
 
         @Override
@@ -583,7 +616,8 @@ implements ServiceConnection {
             final OverlayItem item = new OverlayItem(point, "", "");
             mItemizedOverlay.addItem(item);
         }
-        mMapOverlays.add(mItemizedOverlay);
+        if (!mMapOverlays.contains(mItemizedOverlay))
+            mMapOverlays.add(mItemizedOverlay);
         centerMap(mItemizedOverlay.getCenter(), zoom);
     }
 
