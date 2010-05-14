@@ -90,7 +90,8 @@ implements ServiceConnection {
     private final class LocationOverlay
     extends ItemizedOverlay<OverlayItem> {
         private final ArrayList<OverlayItem> mItems;
-        private final Paint mPaint;
+        private final Paint mPaintBorder;
+        private final Paint mPaintBody;
 
         @Override
         public void draw(Canvas canvas, MapView mapView, boolean shadow) {
@@ -108,7 +109,8 @@ implements ServiceConnection {
 
                 for (int i = 0; i < len; i++) {
                     projection.toPixels(mItems.get(i).getPoint(), out);
-                    canvas.drawCircle(out.x, out.y, radiusOnScreen, mPaint);
+                    canvas.drawCircle(out.x, out.y, radiusOnScreen, mPaintBorder);
+                    canvas.drawCircle(out.x, out.y, radiusOnScreen, mPaintBody);
                 }
             }
 
@@ -119,9 +121,13 @@ implements ServiceConnection {
             super(boundCenterBottom(defaultMarker));
 
             mItems = new ArrayList<OverlayItem>();
-            mPaint = new Paint();
-            mPaint.setARGB(100, 0, 0, 255);
-            mPaint.setAntiAlias(true);
+            mPaintBorder = new Paint();
+            mPaintBorder.setARGB(100, 0, 0, 255);
+            mPaintBorder.setStyle(Paint.Style.STROKE);
+            mPaintBorder.setAntiAlias(true);
+            mPaintBody = new Paint();
+            mPaintBody.setARGB(30, 0, 0, 255);
+            mPaintBody.setAntiAlias(true);
         }
 
         @Override
